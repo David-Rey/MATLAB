@@ -1,23 +1,25 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% FILE: threeBodyProblem2.m
+% FILE: TBP2.m
 % DATE: 12/10/2022
 % DEVELOPER: David Reynolds
 % DESCRIPTION: three body problem with constant center of mass. This is 
-% derived heavly threeBodyProblem1.m 
+% derived heavly TBP1.m 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 close all; clear; clc;
 
-initPos1 = [0; 5; 1];
-initPos2 = [0; 0; 2];
-%initPos3 = [.3; -5; 3];
+initPos1 = [5; 0; -6];
+initPos2 = [5; 4; 6];
+%initPos3 = [0; -5; 0];
 initVel1 = [0; .2; -.3];
 initVel2 = [0.1; 0; .1];
+%initVel1 = [0;0;0];
+%initVel2 = [0;0;0];
 
 
 m1 = 1;
-m2 = 3;
+m2 = 1;
 m3 = 1;
 G = 1;
 params.m1 = m1;
@@ -31,19 +33,22 @@ initPos3 = -(initPos1*m1 + initPos2*m2)/m3;
 x0 = [initPos1; initPos2; initPos3; initVel1; initVel2; initVel3];
 
 dt = 0.001;
-T = 60;
+T = 600;
 
 [t, xRec] = ode45(@(t,x) threeBody(x,params), 0:dt:T, x0);
 
-COM1 = calCenterOfMass(xRec(1,:), params)
-COM1end = calCenterOfMass(xRec(end,:), params)
-COM = calCenterOfMass(xRec, params);
+COM1 = calCenterOfMass(xRec(1,:), params);
+COM1end = calCenterOfMass(xRec(end,:), params);
+COM = zeros(length(t),3);
+for ii=1:length(t)
+    COM(ii,:) = calCenterOfMass(xRec(ii,:), params);
+end
 
 % static plot figure
 figure;
-axis tight
+axis tight on
 grid on
-set(gcf,'Position',[100 100 650 600],'color','w');
+set(gcf,'Position',[100 100 750 700],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
 view([30,30])
 hold on
@@ -51,8 +56,9 @@ hold on
 h1 = animatedline('Color','r');
 h2 = animatedline('Color','g');
 h3 = animatedline('Color','b');
+h4 = animatedline;
 
-timeFactor = 6;
+timeFactor = 20;
 tic;
 runTime = 0;
 while runTime < t(end)
@@ -61,6 +67,7 @@ while runTime < t(end)
     addpoints(h1,xRec(timeIndex,1),xRec(timeIndex,2),xRec(timeIndex,3));
     addpoints(h2,xRec(timeIndex,4),xRec(timeIndex,5),xRec(timeIndex,6));
     addpoints(h3,xRec(timeIndex,7),xRec(timeIndex,8),xRec(timeIndex,9));
+    addpoints(h4,COM(timeIndex,1),COM(timeIndex,2),COM(timeIndex,3));
 
     k = 200*timeIndex / length(t);
     view([k+30,30*sind(k/2)-20])

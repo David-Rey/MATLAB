@@ -1,8 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% FILE: threeBodyProblem1.m
+% FILE: TBP1.m
 % DATE: 12/10/2022
 % DEVELOPER: David Reynolds
-% DESCRIPTION: three body problem simulation
+% DESCRIPTION: three body problem (TBP) simulation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 close all; clear; clc;
