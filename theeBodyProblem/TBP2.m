@@ -20,7 +20,7 @@ initVel2 = [0.1; 0; .1];
 
 m1 = 1;
 m2 = 3;
-m3 = 2;
+m3 = 3;
 G = 1;
 params.m1 = m1;
 params.m2 = m2;
