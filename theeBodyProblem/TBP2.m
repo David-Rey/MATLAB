@@ -19,8 +19,8 @@ initVel2 = [0.1; 0; .1];
 
 
 m1 = 1;
-m2 = 1;
-m3 = 1;
+m2 = 3;
+m3 = 2;
 G = 1;
 params.m1 = m1;
 params.m2 = m2;
@@ -46,8 +46,8 @@ end
 
 % static plot figure
 figure;
-axis tight on
-grid on
+axis tight off
+grid off
 set(gcf,'Position',[100 100 750 700],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
 view([30,30])
@@ -56,7 +56,6 @@ hold on
 h1 = animatedline('Color','r');
 h2 = animatedline('Color','g');
 h3 = animatedline('Color','b');
-h4 = animatedline;
 
 timeFactor = 20;
 tic;
@@ -67,7 +66,6 @@ while runTime < t(end)
     addpoints(h1,xRec(timeIndex,1),xRec(timeIndex,2),xRec(timeIndex,3));
     addpoints(h2,xRec(timeIndex,4),xRec(timeIndex,5),xRec(timeIndex,6));
     addpoints(h3,xRec(timeIndex,7),xRec(timeIndex,8),xRec(timeIndex,9));
-    addpoints(h4,COM(timeIndex,1),COM(timeIndex,2),COM(timeIndex,3));
 
     k = 200*timeIndex / length(t);
     view([k+30,30*sind(k/2)-20])

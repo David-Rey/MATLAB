@@ -13,7 +13,6 @@ syms x3 [1 3]
 syms v1 [1 3]
 syms v2 [1 3]
 syms v3 [1 3]
-
 syms bx [18 1]
 
 m1 = 1;
@@ -62,15 +61,9 @@ Bfun = matlabFunction(symsBvec,'vars',{x});
 
 x0 = randn(1,18);
 
-xDotNonLinear = threeBody(x0, params)
-
 A = Jfun(x0); % continous system matrix
 b = Bfun(x0);
-xDotLienar = A*x0.' + b
 
+xDotLienar = A*x0.' + b;
+xDotNonLinear = threeBody(x0, params);
 
-
-%x0 = randn(1,18);
-%Jfunc(x0)
-
-%J = jacobian([x1Dot,x2Dot,x3Dot,v1Dot,v2Dot,v3Dot],[x1,x2,x3,v1,v2,v3])
