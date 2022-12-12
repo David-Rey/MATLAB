@@ -33,7 +33,7 @@ initPos3 = -(initPos1*m1 + initPos2*m2)/m3;
 x0 = [initPos1; initPos2; initPos3; initVel1; initVel2; initVel3];
 
 dt = 0.001;
-T = 600;
+T = 500;
 
 [t, xRec] = ode45(@(t,x) threeBody(x,params), 0:dt:T, x0);
 
