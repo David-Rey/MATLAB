@@ -41,6 +41,9 @@ opts = odeset('MaxStep',2e-2);
 A = Jfun(y0);
 b = Bfun(y0);
 
+% Observability of state-space model
+
+
 %[t, xRec] = ode45(@(t,x) A*x + b, tspan, y0, opts);
 [t,xRec] = ode45(@(t,y) vdp(t,y), tspan, y0, opts);
 

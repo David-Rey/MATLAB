@@ -34,7 +34,7 @@ Bfun1 = matlabFunction(symsBvec);
 Bfun = @(x) Bfun1(x(1),x(2),x(3));
 
 % setup for ode45
-tspan = [0 30];
+tspan = [0 10];
 y0 = [-10;-10;30];
 opts = odeset('MaxStep',2e-2);
 
@@ -66,6 +66,11 @@ obsPos = [0 0 0];
 obsTru = fobs(xRecTru, obsPos);
 obsFunc = @(x) fobs(x,obsPos);
 
+%
+%C = fH(y0, obsPos)
+%A = Jfun(y0)
+%rank(obsv(A,C))
+
 % measurment noise setup
 sigmaObs = .4;
 %sigmaObs = [1 .8];
@@ -77,12 +82,16 @@ numSteps = size(xRecTru,2);
 xRecEst = zeros(size(xRecTru));
 xRecEst(:,1) = y0;
 
+SVDsigma = zeros(3,numSteps);
+% obsRank = zeros(1,numSteps);
+
 % covarance matrix setup
 PRec = zeros(3,3,numSteps);
 P0 = diag([1 1 1]);
 PRec(:,:,1) = P0;
 PtrRec = zeros(1,numSteps);
 PtrRec(1) = trace(P0);
+
 
 I = eye(3);
 Q = I*.01;
@@ -107,11 +116,19 @@ for kk=1:numSteps - 1
     xNxt = F*xEst + b*dt; % next state
 	PNxt = F*PEst*F.' + Q; % next covarance matrix
     
+	Ob = obsv(A,H);
+	S = svd(Ob);
+	for ii=1:3
+		SVDsigma(ii, kk) = S(ii);
+	end
+
 	% recording
+	obsRank(kk+1) = rank(obsv(A,H));
 	PRec(:,:,kk+1) = PNxt;
 	xRecEst(:,kk+1) = xNxt;
     PtrRec(kk+1) = trace(PNxt);
 end
+
 
 % error calculation
 errorVec = xRecEst - xRecTru;
@@ -148,6 +165,14 @@ for ii=1:numSensors
     plot3(obsPos(ii,1),obsPos(ii,2),obsPos(ii,3),'r.','MarkerSize',20);
 end
 view([40,5]);
+
+figure;
+hold on
+set(gcf,'Position',[100 150 700 600],'color','w');
+set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
+plot(t,SVDsigma(1,:)./SVDsigma(3,:))
+%plot(t,SVDsigma(2,:))
+%plot(t,SVDsigma(3,:))
 
 function dfdt = vdp(t,y)
     rho = 28;

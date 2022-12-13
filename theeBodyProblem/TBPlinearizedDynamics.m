@@ -67,3 +67,11 @@ b = Bfun(x0);
 xDotLienar = A*x0.' + b;
 xDotNonLinear = threeBody(x0, params);
 
+% Observability of state-space model
+I = eye(3);
+I(3,3) = 0;
+C = [I repmat(zeros(3),1,5)];
+
+Ob = obsv(A,C);
+rank(Ob)
+
