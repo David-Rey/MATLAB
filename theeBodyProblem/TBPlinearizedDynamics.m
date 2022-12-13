@@ -47,9 +47,7 @@ J22 = zeros(9);
 J = [J11, J12; J21, J22];
 
 Jfun = matlabFunction(J,'vars',{x});
-
-JlinSyms = J*x.';
-eq = xDot.' == JlinSyms + bx;
+eq = xDot.' == J*x.' + bx;
 Sa = solve(eq,bx);
 
 fn = fieldnames(Sa);
@@ -60,12 +58,14 @@ end
 Bfun = matlabFunction(symsBvec,'vars',{x});
 
 x0 = randn(1,18);
+dt = 0.1;
 
 A = Jfun(x0); % continous system matrix
 b = Bfun(x0);
+F = expm(A)*dt;
 
-xDotLienar = A*x0.' + b;
-xDotNonLinear = threeBody(x0, params);
+xDotLienar = A*x0.' + b
+xDotNonLinear = threeBody(x0, params)
 
 % Observability of state-space model
 I = eye(3);
