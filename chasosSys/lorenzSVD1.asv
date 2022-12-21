@@ -1,5 +1,5 @@
 close all; clear; clc;
-rng(31);
+rng(30);
 
 % lorenz system parameters
 rho = 28;
@@ -66,56 +66,19 @@ obsPos = [0 0 0];
 obsTru = fobs(xRecTru, obsPos);
 obsFunc = @(x) fobs(x,obsPos);
 
-%
-%C = fH(y0, obsPos)
-%A = Jfun(y0)
-%rank(obsv(A,C))
-
-% measurment noise setup
-sigmaObs = .4;
-%sigmaObs = [1 .8];
-R = diag(sigmaObs.^2);
-noisyObs = diag(sigmaObs)*randn(size(obsTru)) + obsTru;
-
 % recoding setup
 numSteps = size(xRecTru,2);
 xRecEst = zeros(size(xRecTru));
 xRecEst(:,1) = y0;
 
 SVDsigma = zeros(3,numSteps);
-% obsRank = zeros(1,numSteps);
+obsRank = zeros(1,numSteps);
 
-% covarance matrix setup
-PRec = zeros(3,3,numSteps);
-P0 = diag([1 1 1]);
-PRec(:,:,1) = P0;
-PtrRec = zeros(1,numSteps);
-PtrRec(1) = trace(P0);
-
-
-I = eye(3);
-Q = I*.01;
-
-% Kalman Filter
 for kk=1:numSteps - 1
-	currectMes = noisyObs(:,kk); % current observation
-   
-	PPre = PRec(:,:,kk); % previous covarance matrix
-	xPre = xRecEst(:,kk); % previous state vector
 
-    H = fH(xPre,obsPos); % observation matrix
-    K = PPre*H.'*inv(H*PPre*H.' + R); % kalman gain
-    xEst = xPre + K*(currectMes - obsFunc(xPre)); % state estimate
-    PEst = (I - K*H)*PPre*(I - K*H).' + K*R*K.'; % covarance update
-
-    dt = t(kk+1) - t(kk);
+    xTru = xRecTru()
     A = Jfun(xEst); % continous system matrix
-    b = Bfun(xEst); % continuous b vector
-    F = expm(A*dt); % discrete time system matrix
-
-    xNxt = F*xEst + b*dt; % next state
-	PNxt = F*PEst*F.' + Q; % next covarance matrix
-    
+    H = fH(,obsPos); % observation matrix
 	Ob = obsv(A,H);
 	S = svd(Ob);
 	for ii=1:3
@@ -124,9 +87,6 @@ for kk=1:numSteps - 1
 
 	% recording
 	obsRank(kk+1) = rank(obsv(A,H));
-	PRec(:,:,kk+1) = PNxt;
-	xRecEst(:,kk+1) = xNxt;
-    PtrRec(kk+1) = trace(PNxt);
 end
 
 
@@ -166,11 +126,11 @@ for ii=1:numSensors
 end
 view([40,5]);
 
-%figure;
-%hold on
-%set(gcf,'Position',[100 150 700 600],'color','w');
-%set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
-%plot(t,SVDsigma(1,:)./SVDsigma(3,:))
+figure;
+hold on
+set(gcf,'Position',[100 150 700 600],'color','w');
+set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
+plot(t,SVDsigma(1,:)./SVDsigma(3,:))
 %plot(t,SVDsigma(2,:))
 %plot(t,SVDsigma(3,:))
 
