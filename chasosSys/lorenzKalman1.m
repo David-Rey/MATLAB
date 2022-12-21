@@ -1,5 +1,5 @@
 close all; clear; clc;
-rng(30);
+rng(31);
 
 % lorenz system parameters
 rho = 28;
