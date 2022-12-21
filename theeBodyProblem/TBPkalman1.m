@@ -7,15 +7,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 close all; clear; clc;
+rng(1);
 
 initPos1 = [5; -1; -6];
-initPos2 = [5; 4; 6];
+initPos2 = [5; 4; 7];
 initVel1 = [-.2; .2; -.3];
-initVel2 = [0.1; 0; .1];
+initVel2 = [0.1; .1; -.1];
 
-m1 = 1;
-m2 = 3;
-m3 = 3;
+m1 = 2.9;
+m2 = 2.9;
+m3 = 2.9;
 G = 1;
 params.m1 = m1;
 params.m2 = m2;
@@ -27,8 +28,8 @@ initPos3 = -(initPos1*m1 + initPos2*m2)/m3;
 
 x0 = [initPos1; initPos2; initPos3; initVel1; initVel2; initVel3];
 
-dt = 0.04;
-T = 105;
+dt = 0.05;
+T = 450;
 
 [t, xRec] = ode45(@(t,x) threeBody(x,params), 0:dt:T, x0);
 xRec = xRec.';
@@ -75,7 +76,7 @@ Bfun = matlabFunction(symsBvec,'vars',{x});
 
 obsTru = xRec(1:3,:);
 
-sigmaObs = [.01 .01 .01];
+sigmaObs = repmat(0.01, 1, 3);
 R = diag(sigmaObs.^2);
 noisyObs = diag(sigmaObs)*randn(size(obsTru)) + obsTru;
 
@@ -86,19 +87,21 @@ xRecEst(:,1) = x0;
 
 % covarance matrix setup
 PRec = zeros(18,18,numSteps);
-P0 = diag(repmat(10, 18, 1));
+P0 = diag(repmat(100, 18, 1));
 PRec(:,:,1) = P0;
 PtrRec = zeros(1,numSteps);
 PtrRec(1) = trace(P0);
 
 I = eye(18);
 Q = I*1;
+%Q(4:18,4:18) = eye(15);
 H = [eye(3) zeros(3,15)]; % observation matrix
 
 % Kalman Filter
 for kk=1:numSteps - 1
 	currectMes = noisyObs(:,kk); % current observation
-   
+    %currectMes = obsTru(:,kk);
+
 	PPre = PRec(:,:,kk); % previous covarance matrix
 	xPre = xRecEst(:,kk); % previous state vector
 
@@ -120,12 +123,11 @@ for kk=1:numSteps - 1
 	xRecEst(:,kk+1) = xNxt;
     PtrRec(kk+1) = trace(PNxt);
 end
-    
-%A = Jfun(x0.'); % continous system matrix
-%b = Bfun(x0.');
-%F = expm(A)*dt;
 
 % static plot figure
+figure;
+semilogy(t,PtrRec);
+
 figure;
 axis tight off
 grid off
@@ -135,55 +137,32 @@ view([30,30])
 hold on
 
 h1 = plot3(xRec(1,1),xRec(2,1),xRec(3,1),'r.','markersize',30);
-h2 = plot3(xRec(4,1),xRec(5,1),xRec(6,1),'b.','markersize',30);
-h3 = plot3(xRec(7,1),xRec(8,1),xRec(9,1),'g.','markersize',30);
+h2 = plot3(xRec(4,1),xRec(5,1),xRec(6,1),'b.','markersize',20);
+h3 = plot3(xRec(7,1),xRec(8,1),xRec(9,1),'g.','markersize',20);
 
 plot3(xRec(1,:),xRec(2,:),xRec(3,:),'r')
-%plot3(xRecEst(1,:),xRecEst(2,:),xRecEst(3,:),'k.')
-
 plot3(xRec(4,:),xRec(5,:),xRec(6,:),'b')
-
-
 plot3(xRec(7,:),xRec(8,:),xRec(9,:),'g')
 
-timeFactor = 5;
+
+
+timeFactor = 10;
 tic;
 runTime = 0;
 while runTime < t(end)
     runTime = toc*timeFactor;
     [~,timeIndex] = min(abs(t-runTime));
     
+    plot3(xRecEst(1,timeIndex),xRecEst(2,timeIndex),xRecEst(3,timeIndex),'k.')
     plot3(xRecEst(4,timeIndex),xRecEst(5,timeIndex),xRecEst(6,timeIndex),'k.')
     plot3(xRecEst(7,timeIndex),xRecEst(8,timeIndex),xRecEst(9,timeIndex),'k.')
     
     h1.XData = xRec(1,timeIndex); h1.YData = xRec(2,timeIndex); h1.ZData = xRec(3,timeIndex);
+    h2.XData = xRec(4,timeIndex); h2.YData = xRec(5,timeIndex); h2.ZData = xRec(6,timeIndex);
+    h3.XData = xRec(7,timeIndex); h3.YData = xRec(8,timeIndex); h3.ZData = xRec(9,timeIndex);
     
     k = 200*timeIndex / length(t);
     view([k+30,30*sind(k/2)-20])
     drawnow;
-    %pause(0.03)
 end
 
-%semilogy(t,PtrRec)
-
-%{
-h1 = animatedline('Color','r');
-h2 = animatedline('Color','g');
-h3 = animatedline('Color','b');
-
-timeFactor = 20;
-tic;
-runTime = 0;
-while runTime < t(end)
-    runTime = toc*timeFactor;
-    [~,timeIndex] = min(abs(t-runTime));
-    addpoints(h1,xRec(timeIndex,1),xRec(timeIndex,2),xRec(timeIndex,3));
-    addpoints(h2,xRec(timeIndex,4),xRec(timeIndex,5),xRec(timeIndex,6));
-    addpoints(h3,xRec(timeIndex,7),xRec(timeIndex,8),xRec(timeIndex,9));
-
-    k = 200*timeIndex / length(t);
-    view([k+30,30*sind(k/2)-20])
-
-    drawnow; 
-end
-%}
