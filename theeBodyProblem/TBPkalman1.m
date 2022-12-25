@@ -17,7 +17,7 @@ initVel2 = [0.1; .1; -.1];
 m1 = 2.9;
 m2 = 2.9;
 m3 = 2.9;
-G = 1;
+G = 1.06;
 params.m1 = m1;
 params.m2 = m2;
 params.m3 = m3;
@@ -29,7 +29,7 @@ initPos3 = -(initPos1*m1 + initPos2*m2)/m3;
 x0 = [initPos1; initPos2; initPos3; initVel1; initVel2; initVel3];
 
 dt = 0.05;
-T = 450;
+T = 350;
 
 [t, xRec] = ode45(@(t,x) threeBody(x,params), 0:dt:T, x0);
 xRec = xRec.';
@@ -124,14 +124,22 @@ for kk=1:numSteps - 1
     PtrRec(kk+1) = trace(PNxt);
 end
 
+% calculate error
+errorVec = xRecEst(4:6,:) - xRec(4:6,:);
+errorMag = vecnorm(errorVec,2,1);
+
 % static plot figure
 figure;
-semilogy(t,PtrRec);
+axis tight off
+grid off
+set(gcf,'Position',[900 100 550 400],'color','w');
+set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
+plot(errorMag);
 
 figure;
 axis tight off
 grid off
-set(gcf,'Position',[100 100 750 700],'color','w');
+set(gcf,'Position',[100 100 850 700],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
 view([30,30])
 hold on
@@ -146,7 +154,7 @@ plot3(xRec(7,:),xRec(8,:),xRec(9,:),'g')
 
 
 
-timeFactor = 10;
+timeFactor = 12;
 tic;
 runTime = 0;
 while runTime < t(end)

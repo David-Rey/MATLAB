@@ -14,10 +14,10 @@ initPos2 = [5; 4; 7];
 initVel1 = [-.2; .2; -.3];
 initVel2 = [0.1; .1; -.1];
 
-m1 = 2.5;
-m2 = 2.5;
-m3 = 2.5;
-G = 1;
+m1 = 2.9;
+m2 = 2.9;
+m3 = 2.9;
+G = 1.08;
 params.m1 = m1;
 params.m2 = m2;
 params.m3 = m3;
@@ -29,7 +29,7 @@ initPos3 = -(initPos1*m1 + initPos2*m2)/m3;
 x0 = [initPos1; initPos2; initPos3; initVel1; initVel2; initVel3];
 
 dt = 0.05;
-T = 450;
+T = 350;
 
 [t, xRec] = ode45(@(t,x) threeBody(x,params), 0:dt:T, x0);
 xRec = xRec.';
@@ -76,7 +76,7 @@ Bfun = matlabFunction(symsBvec,'vars',{x});
 
 obsTru = xRec(1:3,:);
 
-sigmaObs = [.01 .01 .01];
+sigmaObs = repmat(0.01, 1, 3);
 R = diag(sigmaObs.^2);
 noisyObs = diag(sigmaObs)*randn(size(obsTru)) + obsTru;
 
@@ -123,16 +123,22 @@ for kk=1:numSteps - 1
 	xRecEst(:,kk+1) = xNxt;
     PtrRec(kk+1) = trace(PNxt);
 end
-    
-%A = Jfun(x0.'); % continous system matrix
-%b = Bfun(x0.');
-%F = expm(A)*dt;
+
+% calculate error
+
 
 % static plot figure
 figure;
 axis tight off
 grid off
-set(gcf,'Position',[100 100 750 700],'color','w');
+set(gcf,'Position',[800 100 550 400],'color','w');
+set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
+
+
+figure;
+axis tight off
+grid off
+set(gcf,'Position',[100 100 850 700],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
 view([30,30])
 hold on
@@ -145,10 +151,9 @@ plot3(xRec(1,:),xRec(2,:),xRec(3,:),'r')
 plot3(xRec(4,:),xRec(5,:),xRec(6,:),'b')
 plot3(xRec(7,:),xRec(8,:),xRec(9,:),'g')
 
-figure;
-sem
 
-timeFactor = 10;
+
+timeFactor = 12;
 tic;
 runTime = 0;
 while runTime < t(end)
