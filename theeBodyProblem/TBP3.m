@@ -79,6 +79,11 @@ conditionNumRec = zeros(1,numSteps);
 for ii=1:numSteps
     xStep = xRec(ii,:);
     A = Jfun(xStep);
+    A(:,7) = -A(:,1) - A(:,4);
+    A(:,8) = -A(:,2) - A(:,5);
+    A(:,9) = -A(:,3) - A(:,6);
+    
+    %rank(A)
     O = obsv(A,C);
     S = svd(O);
 
