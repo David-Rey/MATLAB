@@ -12,9 +12,8 @@ axis tight
 grid on
 set(gcf,'Position',[100 100 700 500],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
-xlabel("Distance (m)");
-ylabel("Height (m)");
-fontsize(gca,20,'pixels');
+xlabel("meters");
+ylabel("meters");
 hold on
 
 plot(xRecTru(1,:),xRecTru(2,:),'LineWidth',2,'LineStyle','--','Color','k');
