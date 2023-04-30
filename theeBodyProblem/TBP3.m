@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% FILE: TBP2.m
+% FILE: TBP3.m
 % DATE: 12/10/2022
 % DEVELOPER: David Reynolds
 % DESCRIPTION: three body problem with constant center of mass. This is 
@@ -61,7 +61,7 @@ Jfun = matlabFunction(J,'vars',{x});
 %% ODE
 x0 = [initPos1; initPos2; initPos3; initVel1; initVel2; initVel3];
 
-dt = 0.01;
+dt = 0.02;
 T = 300;
 
 [t, xRec] = ode45(@(t,x) threeBody(x,params), 0:dt:T, x0);
@@ -92,7 +92,9 @@ for ii=1:numSteps
     conditionNumRec(ii) = S(1)/S(end);
 end
 
-disp(min(rankRec));
+%disp(min(rankRec));
+[M,I] = min(rankRec)
+
 
 figure;
 semilogy(t,conditionNumRec(1,:))
