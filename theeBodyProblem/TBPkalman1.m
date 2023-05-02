@@ -153,7 +153,6 @@ plot3(xRec(4,:),xRec(5,:),xRec(6,:),'b')
 plot3(xRec(7,:),xRec(8,:),xRec(9,:),'g')
 
 
-
 timeFactor = 12;
 tic;
 runTime = 0;
