@@ -1,5 +1,5 @@
 close all; clear; clc;
-rng(31);
+
 
 % lorenz system parameters
 rho = 28;
@@ -43,7 +43,10 @@ opts = odeset('MaxStep',2e-2);
 xRecTru = xRecTru.';
 
 % observation setup
-numSensors = 1;
+%obsPos = [0 0 0; 1 1 20; 20 0 0];
+obsPos = [0 0 0; 10 0 40];
+%obsPos = [10 0 0];
+numSensors = size(obsPos, 1);
 syms xr [1 3] real;
 syms sr [numSensors 3] real;
 obs = sqrt(sum((repmat(xr,numSensors,1)-sr).^2,2));
@@ -59,17 +62,8 @@ fobs = @(state,sensors) fobs1(sensors,state(1,:),state(2,:),state(3,:));
 fH1 = matlabFunction(Hsym,'vars',{sr,xr(1),xr(2),xr(3)});
 fH = @(state,sensors) fH1(sensors,state(1,:),state(2,:),state(3,:));
 
-% observation setup
-%obsPos = [0 0 0; 1 1 20; 20 0 0];
-%obsPos = [0 0 0; 10 0 40];
-obsPos = [0 0 0];
 obsTru = fobs(xRecTru, obsPos);
 obsFunc = @(x) fobs(x,obsPos);
-
-%
-%C = fH(y0, obsPos)
-%A = Jfun(y0)
-%rank(obsv(A,C))
 
 % measurment noise setup
 sigmaObs = .4;
@@ -166,12 +160,6 @@ for ii=1:numSensors
 end
 view([40,5]);
 
-%figure;
-%hold on
-%set(gcf,'Position',[100 150 700 600],'color','w');
-%set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
-%plot(t,SVDsigma(1,:)./SVDsigma(3,:))
-%plot(t,SVDsigma(2,:))
 %plot(t,SVDsigma(3,:))
 
 function dfdt = vdp(t,y)
