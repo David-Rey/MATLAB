@@ -1,12 +1,7 @@
 
 close all; clear; clc;
 addpath('..\Required Functions\');
-
-numSteps = 200;
-x0 = [0; 0; 20; 65];
-g = 9.8;
-
-[xRecTru, t] = getTraj(x0,g,numSteps);
+load("..\Required Functions\ballData.mat");
 
 figure;
 axis tight

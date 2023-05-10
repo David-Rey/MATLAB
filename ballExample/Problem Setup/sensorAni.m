@@ -1,18 +1,7 @@
 
 close all; clear; clc;
 addpath('..\Required Functions\');
-
-numSteps = 200;
-x0 = [0; 0; 20; 65];
-g = 9.8;
-
-[xRecTru, t] = getTraj(x0,g,numSteps);
-
-sensorObs = [100 0;
-             -50 0;
-             150 100];
-
-numSensors = size(sensorObs,1);
+load("..\Required Functions\ballData.mat");
 
 %% set up plot 1
 set(gcf,'Position',[100 100 1300 500],'color','w');
@@ -38,8 +27,6 @@ ylim([minY, maxY]);
 
 plot(ax1,xRecTru(1,:),xRecTru(2,:),'LineWidth',2,'LineStyle','--','Color','k');
 ballMarker = plot(ax1,xRecTru(1,1),xRecTru(2,1),'Marker','.','MarkerSize',35,'Color','r');
-
-colorArr = ['r','g','b'];
 
 disArr = zeros(numSteps,numSensors);
 for ii=1:numSensors
