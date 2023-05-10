@@ -1,5 +1,6 @@
 
 close all; clear; clc;
+addpath('..\Required Functions\');
 
 numSteps = 200;
 x0 = [0; 0; 20; 65];
@@ -14,11 +15,11 @@ sensorObs = [100 0;
 numSensors = size(sensorObs,1);
 
 %% set up plot 1
-f1 = figure;
-ax1 = gca;
+set(gcf,'Position',[100 100 1300 500],'color','w');
+plotLayout = tiledlayout(1,2,'TileSpacing','compact','Padding','compact');
+ax1 = nexttile;
 axis tight equal
 grid on
-set(gcf,'Position',[100 100 700 500],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
 xlabel("Distance (m)");
 ylabel("Height (m)");
@@ -40,10 +41,7 @@ ballMarker = plot(ax1,xRecTru(1,1),xRecTru(2,1),'Marker','.','MarkerSize',35,'Co
 
 colorArr = ['r','g','b'];
 
-% computing distance array
-%distanceToBall = norm(sensorPos - xRecTru(1:2,ii).');
 disArr = zeros(numSteps,numSensors);
-
 for ii=1:numSensors
     sensorMarker(ii) = plot(ax1,sensorObs(ii,1),sensorObs(ii,2),'h','MarkerSize', 12,'MarkerFaceColor','#EDB120','MarkerEdgeColor','red');
     lineMarker(ii) = line(ax1,[sensorObs(ii,1),xRecTru(1,1)],[sensorObs(ii,2),xRecTru(2,1)]);
@@ -53,11 +51,9 @@ for ii=1:numSensors
 end
 
 %% set up plot 2
-f2 = figure;
-ax2 = gca;
+ax2 = nexttile;
 axis tight
 grid on
-set(gcf,'Position',[800 100 700 500],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
 xlabel("Time (s)");
 ylabel("Distance (m)");
@@ -86,22 +82,8 @@ for ii=1:numSteps
         
     end
     drawnow;
+    pause(0.01);
     if ii < numSteps
         delete(hCir);
-    end
-end
-
-%% functions
-
-function hCir = drawCircle(pos,r,color,varargin)
-    th = 0:0.01:2*pi;
-    x1 = cos(th)*r;
-    y1 = sin(th)*r;
-    x2 = x1 + pos(1);
-    y2 = y1 + pos(2);
-    if isempty(varargin)
-        hCir = plot(x2,y2,color);
-    else
-        hCir = plot(varargin{1},x2,y2,color);
     end
 end

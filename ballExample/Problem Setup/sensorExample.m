@@ -1,8 +1,9 @@
 
 close all; clear; clc;
+addpath('..\Required Functions\');
 
-numSteps = 150;
-x0 = [0; 0; 20; 50];
+numSteps = 200;
+x0 = [0; 0; 20; 65];
 g = 9.8;
 
 [xRecTru, t] = getTraj(x0,g,numSteps);
@@ -14,7 +15,9 @@ set(gcf,'Position',[100 100 1000 600],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
 hold on
 
-senObs = [10 10; 100 20 ;-40 0]; % sensor posistion
+senObs = [100 0;
+             -50 0;
+             150 100]; % sensor posistion
 
 %%% static plotting
 for ss=1:size(senObs,1)
@@ -35,6 +38,7 @@ for ii=2:numSteps
         hLine(ss).YData = [senObs(ss,2), xRecTru(2,ii)];
     end
     drawnow;
+    pause(0.02);
 end
 
 

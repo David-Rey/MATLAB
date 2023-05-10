@@ -1,5 +1,6 @@
 
 close all; clear; clc;
+addpath('..\Required Functions');
 rng(1);
 
 numSteps = 200;
@@ -23,11 +24,11 @@ for ii=1:numSensors
 end
 
 %% set up plot 1
-f1 = figure;
-ax1 = gca;
+set(gcf,'Position',[100 100 1300 500],'color','w');
+plotLayout = tiledlayout(1,2,'TileSpacing','compact','Padding','compact');
+ax1 = nexttile(1);
 axis tight
 grid on
-set(gcf,'Position',[100 100 700 500],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
 xlabel("Time (s)");
 ylabel("Distance (m)");
@@ -41,11 +42,9 @@ for ii=1:numSensors
 end
 
 %% set up plot 2
-f2 = figure;
-ax2 = gca;
+ax2 = nexttile(2);
 axis tight
 grid on
-set(gcf,'Position',[800 100 700 500],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
 xlabel("Time (s)");
 ylabel("Distance (m)");
