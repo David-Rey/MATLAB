@@ -67,10 +67,10 @@ obsTru = fobs(xRecTru, obsPos);
 obsFunc = @(x) fobs(x,obsPos);
 
 % measurment noise setup
-%sigmaObs = .4;
-sigmaObs = [1 .1];
+sigmaObs = .4;
+%sigmaObs = [1 .8];
 R = diag(sigmaObs.^2);
-noisyObs = diag(sigmaObs)*randn(size(obsTru)) + obsTru;
+%noisyObs = diag(sigmaObs)*randn(size(obsTru)) + obsTru;
 
 % recoding setup
 numSteps = size(xRecTru,2);
@@ -87,99 +87,55 @@ PRec(:,:,1) = P0;
 PtrRec = zeros(1,numSteps);
 PtrRec(1) = trace(P0);
 
-
+% model uncertainty matrix
 I = eye(3);
 Q = I*.02;
+Qinv = inv(Q);
+Rinv = inv(R);
 
-% Kalman Filter
+% fisher information matrix
+J0 = inv(P0);
+
+PCRLB = zeros(3, 3, numSteps);
+P_PCRLB = zeros(3, 3, numSteps);
+P_PCRLB_tr = zeros(1, numSteps);
+
+
 for kk=1:numSteps - 1
-	currectMes = noisyObs(:,kk); % current observation
-   
-	PPre = PRec(:,:,kk); % previous covarance matrix
-	xPre = xRecEst(:,kk); % previous state vector
+	xTru = xRecTru(:, kk); % current state
+	Hk = fH(xTru,obsPos); % observation matrix
+	dt = t(kk+1) - t(kk);  % delta time
+	A = Jfun(xTru); % continous system matrix
+	F = expm(A*dt); % discrete time system matrix
 
-    H = fH(xPre,obsPos); % observation matrix
-    K = PPre*H.'*inv(H*PPre*H.' + R); % kalman gain
-    xEst = xPre + K*(currectMes - obsFunc(xPre)); % state estimate
-    PEst = (I - K*H)*PPre*(I - K*H).' + K*R*K.'; % covarance update
+	D11 = F.' * Qinv * F;
+	D12 = -F.' * Qinv;
+	D21 = D12.';
 
-    dt = t(kk+1) - t(kk);
-    A = Jfun(xEst); % continous system matrix
-    b = Bfun(xEst); % continuous b vector
-    F = expm(A*dt); % discrete time system matrix
+	Jk = Hk.'*Rinv*Hk;
+	D22 = Qinv + Jk;
 
-    xNxt = F*xEst + b*dt; % next state
-	PNxt = F*PEst*F.' + Q; % next covarance matrix
-    
-	Ob = obsv(A,H);
-	S = svd(Ob);
-	for ii=1:3
-		SVDsigma(ii, kk) = S(ii);
-	end
+	PCRLB(:, :, kk + 1) = D22 - D21 * inv(PCRLB(:, :, kk) + D11) * D12;
 
-	% recording
-	obsRank(kk+1) = rank(obsv(A,H));
-	PRec(:,:,kk+1) = PNxt;
-	xRecEst(:,kk+1) = xNxt;
-    PtrRec(kk+1) = trace(PNxt);
+	P_PCRLB(:, :, kk) = inv(PCRLB(:, :, kk));
+	P_PCRLB_tr(kk) = trace(P_PCRLB(:, :, kk));
 end
 
 
-% error calculation
-errorVec = xRecEst - xRecTru;
-errorMag = vecnorm(errorVec,2,1);
-
-figure;
-title("Error Magnitude");
-hold on
-set(gcf,'Position',[50 100 700 600],'color','w');
-set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
-xlabel("time (s)");
-ylabel("distance (m)");
-plot(t, errorMag);
-%plot(t, noisyObs(1,:))
-%plot(t, noisyObs(2,:))
-
-figure;
-title("Observation")
-hold on
-set(gcf,'Position',[100 150 700 600],'color','w');
-set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
-xlabel("time (s)");
-ylabel("distance (m)");
-for ii=1:size(noisyObs,1)
-    plot(t, noisyObs(ii,:))
-end
-%semilogy(t, PtrRec);
-grid on
+P_PCRLB_tr = P_PCRLB_tr(:,7:end);
+t = t(7:end,:);
 
 figure;
 title("Uncertainty")
+grid on
 hold on
 set(gcf,'Position',[100 150 700 600],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
-plot(t, PtrRec);
+plot(t, P_PCRLB_tr);
 xlabel("time (s)");
-ylabel("tr(P) (m^2)");
-%plot(t, PtrRec);
+ylabel("tr(inv(J)) [m^2]");
 
-% 3D plotting
-figure;
-axis vis3d tight off equal
-rotate3d on
-hold on
-set(gcf,'Position',[800 100 700 600],'color','w');
-set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
-plot3(xRecTru(1,:), xRecTru(2,:), xRecTru(3,:));
-plot3(xRecEst(1,:), xRecEst(2,:), xRecEst(3,:));
-for ii=1:numSensors
-    plot3(obsPos(ii,1),obsPos(ii,2),obsPos(ii,3),'r.','MarkerSize',20);
-end
-view([40,5]);
-
-%plot(t,SVDsigma(3,:))
-
-function dfdt = vdp(t,y)
+function dfdt = vdp(t, y)
     rho = 28;
     sigma = 10;
     beta = 8/3;
