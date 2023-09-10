@@ -1,11 +1,7 @@
 
 close all; clear; clc;
-
-numSteps = 150;
-x0 = [0; 0; 20; 50];
-g = 9.8;
-
-[xRecTru, t] = getTraj(x0,g,numSteps);
+addpath('..\Required Functions\');
+load("..\Required Functions\ballData.mat");
 
 figure;
 axis tight
@@ -23,6 +19,7 @@ for ii=2:numSteps
     ballMarker.XData = xRecTru(1,ii);
     ballMarker.YData = xRecTru(2,ii);
     drawnow;
+    pause(0.02)
 end
 
 
