@@ -1,5 +1,6 @@
 close all; clear; clc;
 
+rng(1);
 
 % lorenz system parameters
 rho = 28;
@@ -34,8 +35,13 @@ Bfun1 = matlabFunction(symsBvec);
 Bfun = @(x) Bfun1(x(1),x(2),x(3));
 
 % setup for ode45
+<<<<<<< HEAD
+tspan = [0 20];
+y0 = [-10; -10; 30];
+=======
 tspan = [0 30];
 y0 = [-10;-10;30];
+>>>>>>> 2251b7313c3a9a7fdf8c9608c4ce5abfa8a238ef
 opts = odeset('MaxStep',2e-2);
 
 % true ode solution
@@ -66,8 +72,8 @@ obsTru = fobs(xRecTru, obsPos);
 obsFunc = @(x) fobs(x,obsPos);
 
 % measurment noise setup
-sigmaObs = .4;
-%sigmaObs = [1 .8];
+%sigmaObs = .4;
+sigmaObs = [1 .1];
 R = diag(sigmaObs.^2);
 noisyObs = diag(sigmaObs)*randn(size(obsTru)) + obsTru;
 
@@ -88,7 +94,7 @@ PtrRec(1) = trace(P0);
 
 
 I = eye(3);
-Q = I*.01;
+Q = I*.02;
 
 % Kalman Filter
 for kk=1:numSteps - 1
@@ -129,24 +135,40 @@ errorVec = xRecEst - xRecTru;
 errorMag = vecnorm(errorVec,2,1);
 
 figure;
+title("Error Magnitude");
 hold on
 set(gcf,'Position',[50 100 700 600],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
+xlabel("time (s)");
+ylabel("distance (m)");
 plot(t, errorMag);
 %plot(t, noisyObs(1,:))
 %plot(t, noisyObs(2,:))
 
 figure;
+title("Observation")
 hold on
 set(gcf,'Position',[100 150 700 600],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
+xlabel("time (s)");
+ylabel("distance (m)");
 for ii=1:size(noisyObs,1)
     plot(t, noisyObs(ii,:))
 end
 %semilogy(t, PtrRec);
 grid on
 
-% plotting
+figure;
+title("Uncertainty")
+hold on
+set(gcf,'Position',[100 150 700 600],'color','w');
+set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
+plot(t, PtrRec);
+xlabel("time (s)");
+ylabel("tr(P) (m^2)");
+%plot(t, PtrRec);
+
+% 3D plotting
 figure;
 axis vis3d tight off equal
 rotate3d on
