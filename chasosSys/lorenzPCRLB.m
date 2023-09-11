@@ -70,15 +70,9 @@ obsFunc = @(x) fobs(x,obsPos);
 sigmaObs = .4;
 %sigmaObs = [1 .8];
 R = diag(sigmaObs.^2);
-%noisyObs = diag(sigmaObs)*randn(size(obsTru)) + obsTru;
 
 % recoding setup
 numSteps = size(xRecTru,2);
-xRecEst = zeros(size(xRecTru));
-xRecEst(:,1) = y0;
-
-SVDsigma = zeros(3,numSteps);
-% obsRank = zeros(1,numSteps);
 
 % covarance matrix setup
 PRec = zeros(3,3,numSteps);
@@ -95,7 +89,6 @@ Rinv = inv(R);
 
 % fisher information matrix
 J0 = inv(P0);
-
 PCRLB = zeros(3, 3, numSteps);
 P_PCRLB = zeros(3, 3, numSteps);
 P_PCRLB_tr = zeros(1, numSteps);
