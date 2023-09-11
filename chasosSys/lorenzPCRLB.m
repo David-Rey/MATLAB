@@ -45,8 +45,8 @@ xRecTru = xRecTru.';
 
 % observation setup
 %obsPos = [0 0 0; 1 1 20; 20 0 0];
-obsPos = [0 0 0; 10 0 40];
-%obsPos = [10 0 0];
+% obsPos = [0 0 0; 10 0 40];
+obsPos = [10 5 0];
 numSensors = size(obsPos, 1);
 syms xr [1 3] real;
 syms sr [numSensors 3] real;
@@ -67,7 +67,7 @@ obsTru = fobs(xRecTru, obsPos);
 obsFunc = @(x) fobs(x,obsPos);
 
 % measurment noise setup
-sigmaObs = .4;
+sigmaObs = 1;
 %sigmaObs = [1 .8];
 R = diag(sigmaObs.^2);
 
@@ -77,9 +77,6 @@ numSteps = size(xRecTru,2);
 % covarance matrix setup
 PRec = zeros(3,3,numSteps);
 P0 = diag([1 1 1]);
-PRec(:,:,1) = P0;
-PtrRec = zeros(1,numSteps);
-PtrRec(1) = trace(P0);
 
 % model uncertainty matrix
 I = eye(3);
@@ -90,6 +87,7 @@ Rinv = inv(R);
 % fisher information matrix
 J0 = inv(P0);
 PCRLB = zeros(3, 3, numSteps);
+PCRLB(:, :, 1) = J0;
 P_PCRLB = zeros(3, 3, numSteps);
 P_PCRLB_tr = zeros(1, numSteps);
 
@@ -114,19 +112,22 @@ for kk=1:numSteps - 1
 	P_PCRLB_tr(kk) = trace(P_PCRLB(:, :, kk));
 end
 
+startIndex = 1;
 
-P_PCRLB_tr = P_PCRLB_tr(:,7:end);
-t = t(7:end,:);
+P_PCRLB_tr = P_PCRLB_tr(:,startIndex:end);
+t = t(startIndex:end,:);
 
 figure;
 title("Uncertainty")
 grid on
-hold on
+
 set(gcf,'Position',[100 150 700 600],'color','w');
 set(gca,'XAxisLocation', 'origin', 'YAxisLocation', 'origin');
-plot(t, P_PCRLB_tr);
+semilogy(t, P_PCRLB_tr);
+hold on
 xlabel("time (s)");
 ylabel("tr(inv(J)) [m^2]");
+
 
 function dfdt = vdp(t, y)
     rho = 28;
