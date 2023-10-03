@@ -3,7 +3,7 @@ close all; clear; clc;
 addpath('..\Required Functions');
 load("..\Required Functions\ballData.mat");
 
-exampleStep = 40;
+exampleStep = 2;
 
 syms x [1 4] real; % [x y vx vy]
 syms s [numSensors 2] real; % sensor pos
@@ -23,8 +23,8 @@ mseFun = @(x) fEst(x(1:2).', sensorObs, noiseMes(:, exampleStep).', currectWeigh
 
 [xmin,xmax,ymin,ymax] = calBounds(sensorObs, xRecTru);
 
-gridX = xmin:2:xmax;
-gridY = ymin:2:ymax;
+gridX = xmin:1:xmax;
+gridY = ymin:1:ymax;
 [X,Y] = meshgrid(gridX,gridY);
 
 longX = reshape(X,1,length(X(1,:))*length(X(:,1)));
@@ -37,7 +37,7 @@ end
 err = 1./reshape(error,length(X(:,1)),length(X(1,:)));
 
 
-%% set up plot 1
+%% set up plot
 set(gcf,'Position',[100 100 900 600],'color','w');
 axis tight equal
 grid on
@@ -55,7 +55,7 @@ minY = min(min(xRecTru(2,:)),min(sensorObs(:,2)));
 axisBuf = 20;
 
 xlim([minX - axisBuf, maxX + axisBuf]);
-ylim([minY, maxY]);
+ylim([minY - axisBuf, maxY + axisBuf]);
 
 imagesc(gridX,gridY,err);
 colormap("hot");
@@ -74,13 +74,12 @@ for kk=1:numSensors
 end
 
 %% PSO
-
 nIter = 40;
 nParticles = 200;
-nParticlesRec = 60;
+nParticlesRec = 50;
 
-lowerBound = [minX, minY];
-upperBound = [maxX, maxY];
+lowerBound = [minX - axisBuf, minY - axisBuf];
+upperBound = [maxX + axisBuf, maxY + axisBuf];
 
 out = particleSwarmOptimizer(mseFun, nParticles, nIter, lowerBound, upperBound, 'recordPart', nParticlesRec);
 
@@ -88,7 +87,7 @@ out = particleSwarmOptimizer(mseFun, nParticles, nIter, lowerBound, upperBound, 
 for kk=1:nParticlesRec
     particle = out.popRec(kk,1);
     particlePos = particle.pos;
-    pPartical(kk) = plot(particlePos(1), particlePos(2), 'color', [200 200 200]./255);
+    pPartical(kk) = plot(particlePos(1), particlePos(2), 'b.');
 end
 
 for ii=1:nIter

@@ -85,9 +85,8 @@ Qinv = inv(Q);
 Rinv = inv(R);
 
 % fisher information matrix
-J0 = inv(P0);
 PCRLB = zeros(3, 3, numSteps);
-PCRLB(:, :, 1) = J0;
+PCRLB(:, :, 1) = inv(P0);
 P_PCRLB = zeros(3, 3, numSteps);
 P_PCRLB_tr = zeros(1, numSteps);
 
