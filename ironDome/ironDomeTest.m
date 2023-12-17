@@ -49,8 +49,8 @@ plot(x1(:,1),x1(:,3), 'r')
 plot(x2(:,1),x2(:,3), 'k')
 plot(x3(:,1),x3(:,3), 'g')
 
-figure;
-plot(t1, x1(:,8))
+%figure;
+%plot(t1, x1(:,8))
 
 
 function dxdt = motionOfBall(t, x, ballParms, envParms)
@@ -113,7 +113,7 @@ function Cd = getCd(Re)
 	% https://www.mdpi.com/2504-3900/2/6/238
 	% https://www.desmos.com/calculator/pk2175tmgn
 
-	lowRe = 0.5E5;
+	lowRe = 0;
 	midRe = 81207;
 	highRe = 2E5;
 	
