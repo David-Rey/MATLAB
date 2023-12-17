@@ -35,13 +35,8 @@ Bfun1 = matlabFunction(symsBvec);
 Bfun = @(x) Bfun1(x(1),x(2),x(3));
 
 % setup for ode45
-<<<<<<< HEAD
 tspan = [0 20];
 y0 = [-10; -10; 30];
-=======
-tspan = [0 30];
-y0 = [-10;-10;30];
->>>>>>> 2251b7313c3a9a7fdf8c9608c4ce5abfa8a238ef
 opts = odeset('MaxStep',2e-2);
 
 % true ode solution
