@@ -8,6 +8,7 @@ classdef Camera < handle
 		fovColor = [.5 .5 .5];
 		showFrontCross logical
 		showFrontMarker logical
+		maxUV (1,2) double {mustBeReal}
 	end
 	properties (Access = private)
 		Rf = eye(3);
@@ -24,6 +25,7 @@ classdef Camera < handle
 			obj.depth = sort(depth);
 			obj.showFrontCross = 1;
 			obj.showFrontMarker = 1;
+			obj.maxUV = [tand(FOV(1)/2), tand(FOV(2)/2)];
 			setUpFrame(obj);
 		end
 		
@@ -212,6 +214,24 @@ classdef Camera < handle
 			tPoints = zeros(size(points));
 			for ii=1:length(points(1,:))
 				tPoints(:,ii) = obj.Rr*(points(:,ii) - obj.bVec);
+			end
+		end
+
+		function tPoints = transformPointsForward(obj,points)
+			tPoints = zeros(size(points));
+			for ii=1:length(points(1,:))
+				tPoints(:,ii) = obj.Rf*points(:,ii) + obj.bVec;
+			end
+		end
+
+		function loc = frameLocPoints(obj,points)
+			numPoints = length(points(1,:))
+			tPoints = inv(obj.Rf)*(points - repmat(obj.bVec, 1, numPoints));
+			loc = zeros(size(tPoints));
+			for ii=1:numPoints
+				loc(1,ii) = -tPoints(1,ii) / tPoints(3,ii);  % u=x/z
+				loc(2,ii) = tPoints(2,ii) / tPoints(3,ii);   % v=y/z
+				loc(3,ii) = norm(tPoints(:,ii));             % r=norm(tPoint)
 			end
 		end
 		
