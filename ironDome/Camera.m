@@ -225,7 +225,7 @@ classdef Camera < handle
 		end
 
 		function loc = frameLocPoints(obj,points)
-			numPoints = length(points(1,:))
+			numPoints = length(points(1,:));
 			tPoints = inv(obj.Rf)*(points - repmat(obj.bVec, 1, numPoints));
 			loc = zeros(size(tPoints));
 			for ii=1:numPoints

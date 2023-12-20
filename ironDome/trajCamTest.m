@@ -53,6 +53,12 @@ orgin = Orgin(10);
 camFrames1 = cam1.frameLocPoints(trajPos.');
 camFrames2 = cam2.frameLocPoints(trajPos.');
 
+UVcords1 = camFrames1(1:2,:);
+UVcords2 = camFrames2(1:2,:);
+
+size1 = 2*atand(ballParms.radius ./ camFrames1(3,:));
+size2 = 2*atand(ballParms.radius ./ camFrames2(3,:));
+
 view([0 0])
 axis vis3d off
 view([45 45])
@@ -67,19 +73,23 @@ plot3(trajPos(:,1), trajPos(:,2), trajPos(:,3), 'r.')
 
 maxU = cam1.maxUV(1);
 maxV = cam1.maxUV(2);
-f = 1.2
+f = 1.2;
 
 figure;
 xlim(f*[-maxU, maxU])
 ylim(f*[-maxV, maxV])
 grid on
 hold on
-plot(camFrames1(1, :), camFrames1(2, :), 'r.');
-plot(camFrames2(1, :), camFrames2(2, :), 'b.');
+plot(UVcords1(1, :), UVcords1(2, :), 'r.');
+plot(UVcords2(1, :), UVcords2(2, :), 'b.');
 
 plot([-maxU, maxU, maxU, -maxU, -maxU], [maxV, maxV, -maxV, -maxV, maxV], 'k')
 plot([-maxU*0.3, 0], [0, 0], 'r', 'LineWidth', 2)
 plot([0, 0], [maxV*0.3, 0], 'g', 'LineWidth', 2)
+
+% Save
+save('camData','UVcords1','size1','UVcords2','size2')
+
 % Funcitons
 
 function dxdt = motionOfBall(t, x, ballParms, envParms)
