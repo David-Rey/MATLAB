@@ -88,7 +88,7 @@ plot([-maxU*0.3, 0], [0, 0], 'r', 'LineWidth', 2)
 plot([0, 0], [maxV*0.3, 0], 'g', 'LineWidth', 2)
 
 % Save
-save('camData','UVcords1','size1','UVcords2','size2')
+%save('camData','UVcords1','size1','UVcords2','size2')
 
 % Funcitons
 

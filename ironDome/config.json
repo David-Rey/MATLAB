@@ -1,0 +1,38 @@
+{
+  "SimSettings" : {
+	"dt": 0.1,
+	"maxTime": 10
+  },
+  "GolfBall": {
+    "mass": 0.0459,
+    "radius": 0.0214,
+    "spinDecay": 1
+  },
+  "Environment": {
+    "airDensity": 1.205,
+    "gravity": 9.8,
+    "viscosity": 0.0000148
+  },
+  "Cameras": [
+    {
+      "id": "cam1",
+      "HFOV": 40,
+      "VFOV": 40,
+      "depth": 30,
+	  "pos": [-2, 10, 0],
+	  "az": 180,
+	  "el": 20,
+	  "roll": 0
+    },
+    {
+      "id": "cam2",
+      "HFOV": 40,
+      "VFOV": 40,
+      "depth": 30,
+	  "pos": [0, 0, 0],
+	  "az": 180,
+	  "el": 20,
+	  "roll": 0
+    }
+  ]
+}

@@ -1,257 +1,203 @@
 classdef Camera < handle
-	properties
-		bVec (3,1) double {mustBeReal}
-		rotVec (1,3) double {mustBeReal}
-		fov (1,2) double {mustBeReal}
-		depth {mustBeReal}
-		sensorColor = 'k';
-		fovColor = [.5 .5 .5];
-		showFrontCross logical
-		showFrontMarker logical
-		maxUV (1,2) double {mustBeReal}
-	end
-	properties (Access = private)
-		Rf = eye(3);
-		Rr = eye(3);
-		staticFrame;
-		frame;
-		frameGeo;
-		orginGeo;
-	end
+    % Camera Class for simulating a camera in 3D space.
+    % This class handles camera properties such as position, orientation,
+    % field of view, and frustum calculation for 3D visualization.
+
+    properties
+        bVec (3,1) double {mustBeReal}   % Camera position vector
+        fov (1,2) double {mustBeReal}    % Field of view (degrees) in x and y directions
+        maxUV (1,2) double {mustBeReal}  % Maximum UV coordinates (based on FOV)
+        depth {mustBeReal}               % Depth of the view frustum
+        az                               % Azimuth angle for rotation
+        el                               % Elevation angle for rotation
+        roll                             % Roll angle for rotation
+        R = eye(3)                       % Rotation matrix (initialized to identity)
+		obsUVAtru						 % True ovservations in UVA [ u=x/y, v=z/y, alpha = 2*atan(R/norm(pos) ]
+		obsUVAmes						 % Estimate ovservations in UVA [ u=x/y, v=z/y, alpha = 2*atan(R/norm(pos) ]
+		obsTimeSaw                       % Array of time elements
+    end
+
+    properties (Access = private)
+        staticFrustum;                   % Static frustum corners (before rotation and translation)
+        frustumGeo;                      % Graphical objects for frustum visualization
+        orginGeo;                        % Graphical object for camera position visualization
+    end
+
+    methods
+        function obj = Camera(FOV, depth)
+            % Constructor for Camera class.
+            obj.fov = FOV;
+            obj.depth = depth;
+            obj.maxUV = [tand(FOV(1)/2), tand(FOV(2)/2)];
+            obj.setUpFrustum();
+        end
+
+        function setTranslation(obj, bVec)
+            % Set the translation (position) of the camera.
+            obj.bVec = bVec;
+        end
+
+        function setRotation(obj, az, el, roll)
+            % Set the rotation of the camera.
+            obj.az = az;
+            obj.el = el;
+            obj.roll = roll;
+            [Rx,Ry,Rz] = obj.getRotationMatrices();
+            obj.R = Rz*Rx*Ry; % Update rotation matrix
+        end
+
+        function [Rx,Ry,Rz] = getRotationMatrices(obj)
+            % Calculate rotation matrices for each axis.
+            x = obj.el;
+            y = obj.roll;
+            z = -obj.az;
+            Rx = [1,0,0; 0,cosd(x),-sind(x); 0,sind(x),cosd(x)]; % x rotation
+            Ry = [cosd(y),0,sind(y); 0,1,0; -sind(y),0,cosd(y)]; % y rotation
+            Rz = [cosd(z),-sind(z),0; sind(z),cosd(z),0; 0,0,1]; % z rotation
+		end
+
+		function tPoints = global2local(obj, points)
+        	% Transform points from the global (world) coordinate system to the local (camera) coordinate system.
 	
-	methods
-		function obj = Camera(FOV, depth)
-			obj.fov = FOV;
-			obj.depth = sort(depth);
-			obj.showFrontCross = 1;
-			obj.showFrontMarker = 1;
-			obj.maxUV = [tand(FOV(1)/2), tand(FOV(2)/2)];
-			setUpFrame(obj);
-		end
-		
-		function setRotation(obj, rVec)
-			obj.rotVec = rVec;
-			obj.Rf = getRotationForward(obj);
-			obj.Rr = getRotationReverse(obj);
-		end
-		
-		function setTranslation(obj, bVec)
-			obj.bVec = bVec;
-		end
-		
-		function logical = isInView(obj, point)
-			%tPoint = transformPointReverse(obj,point);
-			tPoint = inv(obj.Rr)*(point - obj.bVec);
-			thx = (90 - (obj.fov(1)/2));
-			thy = (90 - (obj.fov(2)/2));
-			
-			[thPtX,~] = cart2pol(tPoint(1,:),tPoint(3,:));
-			thPtX = rad2deg(thPtX);
-			[thPtY,~] = cart2pol(tPoint(2,:),tPoint(3,:));
-			thPtY = rad2deg(thPtY);
-			rPt = vecnorm(tPoint);
-			
-			checkX = thx < thPtX & 180-thx > thPtX;
-			checkY = thy < thPtY & 180-thy > thPtY;
-			checkR = rPt > obj.depth(1) & rPt < obj.depth(end);
-			
-			logical = checkX & checkY & checkR;
-		end
-		
-		function [Rx,Ry,Rz] = getRotationMatrices(obj)
-			x = obj.rotVec(1);
-			y = obj.rotVec(2);
-			z = obj.rotVec(3);
-			Rx = [1,0,0; 0,cosd(x),-sind(x); 0,sind(x),cosd(x)]; % x rotation matrix
-			Ry = [cosd(y),0,sind(y); 0,1,0; -sind(y),0,cosd(y)]; % y rotation matrix
-			Rz = [cosd(z),-sind(z),0; sind(z),cosd(z),0; 0,0,1]; % z rotation matrix
-		end
-		
-		function Rf = getRotationForward(obj)
-			[Rx,Ry,Rz] = getRotationMatrices(obj);
-			Rf = Rz*Ry*Rx; % rotation matrix in zyx (order matters in matrix multiplication!)
-		end
-		
-		function Rr = getRotationReverse(obj)
-			[Rx,Ry,Rz] = getRotationMatrices(obj);
-			Rr = Rx*Ry*Rz; % rotation matrix in xyz (order matters in matrix multiplication!)
-		end
-		
-		function setFrontCross(obj, logical)
-			obj.showFrontCross = logical;
-			clearFrame(obj);
-			setUpFrame(obj);
+        	% Ensure points are in a column-wise format
+        	if size(points, 1) ~= 3
+            	points = points';
+        	end
+	
+        	translatedPoints = points - obj.bVec;
+        	tPoints = obj.R' * translatedPoints;
 		end
 
-		function setFrontMarker(obj, logical)
-			obj.showFrontMarker = logical;
-			clearFrame(obj);
-			setUpFrame(obj);
-		end
+		function bools = isInView(obj, points)
+    		% Initialize the boolean array
+    		bools = false(1, size(points, 2));  % One entry per point
 		
-		function setFOV(obj, FOV)
-			obj.fov = FOV;
-			clearFrame(obj);
-			setUpFrame(obj);
-		end
-
-		function setDepth(obj, depth)
-			obj.depth = sort(depth);
-			clearFrame(obj);
-			setUpFrame(obj);
-		end
-
-		function tPoint = transformPointReverse(obj, point)
-			tPoint = obj.Rr*(point - obj.bVec);
-		end
+    		% Calculate half-angles for easier computation
+    		halfHFOV = obj.fov(1) / 2;
+    		halfVFOV = obj.fov(2) / 2;
 		
-		function setUpFrame(obj)
-			tempFrame.points = [0;0;0;];
-			tempFrame.type = '';
-			tempFrame.color = [0 0 0];
-			
-			for iRange=1:length(obj.depth)
-				for iFOV=-1:2:1
-					for funToUse=1:2
-						switch funToUse
-							case 1
-								tempFrame(end+1).points = getFOVarcX(obj,iFOV*obj.fov(2),obj.depth(iRange));
-							case 2
-								tempFrame(end+1).points = getFOVarcY(obj,iFOV*obj.fov(1),obj.depth(iRange));
-						end
-						switch iRange
-							case 1
-								tempFrame(end).type = 'closeFeild';
-							case length(obj.depth)
-								tempFrame(end).type = 'farFeild';
-							otherwise
-								tempFrame(end).type = 'interFeild';
-						end
-						tempFrame(end).color = obj.fovColor;
-					end
-				end
-			end
-			
-			cPoints(:,1) = tempFrame(end-3).points(:,1);
-			cPoints(:,2) = tempFrame(end-3).points(:,100);
-			cPoints(:,3) = tempFrame(end-1).points(:,1);
-			cPoints(:,4) = tempFrame(end-1).points(:,100);
-			
-			for ii=1:4
-				tempFrame(end+1).points = [0,cPoints(1,ii); 0,cPoints(2,ii); 0,cPoints(3,ii)];
-				tempFrame(end).type = 'edge';
-				tempFrame(end).color = obj.fovColor;
-			end
-			
-			if obj.showFrontMarker
-				xDis = norm(cPoints(:,2) - cPoints(:,3)) / 4;
-				yDis = norm(cPoints(:,1) - cPoints(:,3)) / 4;
-
-				tempFrame(end+1).points = [0,xDis; 0,0; obj.depth(end),obj.depth(end)];
-				tempFrame(end).type = 'Xcross';
-				tempFrame(end).color = [1 0 0];
-				tempFrame(end+1).points = [0,0; 0,yDis; obj.depth(end),obj.depth(end)];
-				tempFrame(end).type = 'Ycross';
-				tempFrame(end).color = [0 1 0];
-			end
-			
-			if obj.showFrontCross
-				tempFrame(end+1).points = getFOVarcX(obj,0,obj.depth(end));
-				tempFrame(end).type = 'frontCross';
-				tempFrame(end).color = obj.fovColor;
-				
-				tempFrame(end+1).points = getFOVarcY(obj,0,obj.depth(end));
-				tempFrame(end).type = 'frontCross';
-				tempFrame(end).color = obj.fovColor;
-			end
-			obj.staticFrame = tempFrame;
-		end
-
-		function clearFrame(obj)
-			obj.staticFrame = rmfield(obj.staticFrame,fields(obj.staticFrame));
-		end
-
-		function points = getFOVarcX(obj,alpha,r)
-			thx = deg2rad(90 - (obj.fov(1)/2));
-			thy = deg2rad(90 - (alpha/2));
-			cosX = cos(thx)^2;
-			cosY = cos(thy)^2;
-			maxL = sqrt((r^2*cosX*(1-cosY)) / (1-cosY*cosX)); % magic lol
-			
-			x = linspace(-maxL,maxL);
-			rPrime = sqrt(r.^2 - x.^2);
-			[y,z] = pol2cart(thy,rPrime);
-			points = [x;y;z];
-		end
+    		% Iterate over each point
+    		for i = 1:size(points, 2)
+        		% Normalize the point to get direction vector
+        		directionVector = points(:, i) / norm(points(:, i));
 		
-		function points = getFOVarcY(obj,alpha,r)
-			thx = deg2rad(90 - (alpha/2));
-			thy = deg2rad(90 - (obj.fov(2)/2));
-			cosX = cos(thx)^2;
-			cosY = cos(thy)^2;
-			maxL = sqrt((r^2*cosX*(1-cosY)) / (1-cosY*cosX)); % magic lol
-			maxW = sqrt(r^2-maxL^2)*cos(thy);
-			
-			y = linspace(maxW,-maxW);
-			rPrime = sqrt(r.^2 - y.^2);
-			[x,z] = pol2cart(thx,rPrime);
-			points = [x;y;z];
-		end
+        		% Calculate angles from direction vector
+        		angleH = atand(directionVector(1) / directionVector(2));
+				logicH = -halfHFOV < angleH && halfHFOV > angleH;
+
+				angleV = atand(directionVector(3) / directionVector(2));
+				logicV = -halfVFOV < angleV && halfVFOV > angleV;
 		
-		function transformFrameForward(obj)
-			tempFrame = obj.staticFrame;
-			for frameElement=1:length(obj.staticFrame)
-				for ii=1:length(obj.staticFrame(frameElement).points(1,:))
-					tempFrame(frameElement).points(:,ii) = obj.Rf*obj.staticFrame(frameElement).points(:,ii) + obj.bVec;
-					tempFrame(frameElement).type = obj.staticFrame(frameElement).type;
-					tempFrame(frameElement).color = obj.staticFrame(frameElement).color;
-				end
-			end
-			obj.frame = tempFrame;
-		end
-		
-		function tPoints = transformPointsReverse(obj,points)
-			tPoints = zeros(size(points));
-			for ii=1:length(points(1,:))
-				tPoints(:,ii) = obj.Rr*(points(:,ii) - obj.bVec);
-			end
+        		% Check if point is within FOV
+        		bools(i) = logicH & logicV;
+    		end
 		end
 
-		function tPoints = transformPointsForward(obj,points)
-			tPoints = zeros(size(points));
-			for ii=1:length(points(1,:))
-				tPoints(:,ii) = obj.Rf*points(:,ii) + obj.bVec;
+
+    	function tPoints = local2global(obj, points)
+        	% Transform points from the local (camera) coordinate system to the global (world) coordinate system.
+	
+        	% Ensure points are in a column-wise format
+        	if size(points, 1) ~= 3
+            	points = points';
+        	end
+	
+        	rotatedPoints = obj.R * points;
+        	tPoints = rotatedPoints + obj.bVec;
+    	end
+
+		function global2UVA(obj, points, time, ballRadius)
+			if size(points, 1) ~= 3
+            	points = points';
 			end
+	        % Apply rotation and translation transformations
+        	numPoints = size(points, 2);
+        	transformedPointsAll = global2local(obj, points);
+			bools = isInView(obj, transformedPointsAll);
+			transformedPoints = transformedPointsAll(:, bools);
+			filteredTime = time(bools);
+	
+        	% Initialize the location matrix
+        	obs = zeros(3, length(filteredTime));
+	
+        	% Calculate the (u, v) coordinates on the image plane and distance r
+        	obs(1, :) = transformedPoints(1, :) ./ transformedPoints(2, :);  % u = x/y
+        	obs(2, :) = transformedPoints(3, :) ./ transformedPoints(2, :);  % v = z/y
+			obs(3, :) = 2*atan(ballRadius ./ vecnorm(transformedPoints));
+			obj.obsUVAtru = obs;
+			obj.obsTimeSaw = filteredTime;
 		end
 
-		function loc = frameLocPoints(obj,points)
-			numPoints = length(points(1,:));
-			tPoints = inv(obj.Rf)*(points - repmat(obj.bVec, 1, numPoints));
-			loc = zeros(size(tPoints));
-			for ii=1:numPoints
-				loc(1,ii) = -tPoints(1,ii) / tPoints(3,ii);  % u=x/z
-				loc(2,ii) = tPoints(2,ii) / tPoints(3,ii);   % v=y/z
-				loc(3,ii) = norm(tPoints(:,ii));             % r=norm(tPoint)
-			end
+		function addCamNoise(obj)
+			stdU = 0.05;
+			stdV = 0.05;
+			stdAlpha = 0.001;
+
+			R = diag([stdU stdV stdAlpha].^2);
+			obj.obsUVAmes = R*randn(size(obj.obsUVAtru)) + obj.obsUVAtru;
 		end
-		
+
+        function setUpFrustum(obj)
+            % Calculate and set up the static frustum corners.
+            halfFovX = obj.fov(1) / 2;
+            halfFovY = obj.fov(2) / 2;
+            halfWidth = obj.depth * tand(halfFovX);
+            halfHeight = obj.depth * tand(halfFovY);
+            farTopLeft     = [-halfWidth; obj.depth; halfHeight];
+            farTopRight    = [halfWidth; obj.depth; halfHeight];
+            farBottomLeft  = [-halfWidth; obj.depth; -halfHeight];
+            farBottomRight = [halfWidth; obj.depth; -halfHeight];
+            obj.staticFrustum = [farTopLeft, farTopRight, farBottomLeft, farBottomRight];
+        end
+
 		function drawCam(obj)
-			transformFrameForward(obj);
-			
-			delete(obj.frameGeo);
-			delete(obj.orginGeo);
-
-			obj.orginGeo = plot3(obj.bVec(1), obj.bVec(2), obj.bVec(3),...
-				'h','MarkerSize', 10,'MarkerFaceColor','#EDB120','MarkerEdgeColor','red');
-			
-			obj.frameGeo = gobjects(0);
-			for frameElement=1:length(obj.frame)
-				x = obj.frame(frameElement).points(1,:);
-				y = obj.frame(frameElement).points(2,:);
-				z = obj.frame(frameElement).points(3,:);
-				color = obj.frame(frameElement).color;
-				obj.frameGeo(end+1) = line(x,y,z,'color',color);
-			end
+    		% Visualize the camera and its frustum.
+    		delete(obj.frustumGeo);
+    		delete(obj.orginGeo);
+		
+    		% Draw the camera position
+    		obj.orginGeo = plot3(obj.bVec(1), obj.bVec(2), obj.bVec(3), ...
+                         		'h', 'MarkerSize', 10, 'MarkerFaceColor', '#EDB120', 'MarkerEdgeColor', 'red');
+		
+    		% Update dynamic frustum based on rotation and translation
+    		transformedFrustum = obj.R * obj.staticFrustum + obj.bVec;
+		
+    		% Drawing lines for the frustum
+    		obj.frustumGeo = gobjects(8, 1); % 8 lines for the frustum
+    		for i = 1:4
+        		% Lines from camera to frustum corners
+        		frustumPoint = transformedFrustum(:, i);
+        		obj.frustumGeo(i) = line([obj.bVec(1), frustumPoint(1)], ...
+                                 		[obj.bVec(2), frustumPoint(2)], ...
+                                 		[obj.bVec(3), frustumPoint(3)], ...
+                                 		'Color', [0, 0, 0]); % Draw frustum lines
+    		end
+		
+    		% Define lines connecting the corners of the frustum far plane
+    		cornerLines = [1,2; 2,4; 4,3; 3,1];
+    		for i = 1:size(cornerLines, 1)
+        		startPoint = transformedFrustum(:, cornerLines(i, 1));
+        		endPoint = transformedFrustum(:, cornerLines(i, 2));
+        		obj.frustumGeo(i+4) = line([startPoint(1), endPoint(1)], ...
+                                   		[startPoint(2), endPoint(2)], ...
+                                   		[startPoint(3), endPoint(3)], ...
+                                   		'Color', [0, 0, 0]);
+    		end
 		end
-	end
+
+		function drawObs(obj)
+			figure;
+			hold on
+
+			truObs = obj.obsUVAtru;
+			mesObs = obj.obsUVAmes;
+			maxU = obj.maxUV(1);
+			maxV = obj.maxUV(2);
+
+			plot(truObs(1, :), truObs(2, :), 'k')
+			plot(mesObs(1, :), mesObs(2, :), 'Color', [0.5 0.5 0.5])
+			plot([-maxU, maxU, maxU, -maxU, -maxU], [maxV, maxV, -maxV, -maxV, maxV], 'k--')
+			
+		end
+    end
 end
