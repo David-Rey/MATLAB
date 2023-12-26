@@ -6,7 +6,7 @@
   "GolfBall": {
     "mass": 0.0459,
     "radius": 0.0214,
-    "spinDecay": 1
+    "spinDecay": 0.06
   },
   "Environment": {
     "airDensity": 1.205,
@@ -19,7 +19,7 @@
       "HFOV": 40,
       "VFOV": 40,
       "depth": 30,
-	  "pos": [-2, 10, 0],
+	  "pos": [-10, 10, 0],
 	  "az": 180,
 	  "el": 20,
 	  "roll": 0

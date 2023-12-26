@@ -9,7 +9,6 @@ x0Rot = [10;30;100];
 
 x0 = [x0Pos;x0Vel;x0Rot];
 
-
 configName = 'config.json';
 
 tracker = BallTracker(x0, configName);

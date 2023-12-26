@@ -8,13 +8,14 @@ classdef Camera < handle
         fov (1,2) double {mustBeReal}    % Field of view (degrees) in x and y directions
         maxUV (1,2) double {mustBeReal}  % Maximum UV coordinates (based on FOV)
         depth {mustBeReal}               % Depth of the view frustum
-        az                               % Azimuth angle for rotation
-        el                               % Elevation angle for rotation
-        roll                             % Roll angle for rotation
+        az double {mustBeReal}           % Azimuth angle for rotation
+        el double {mustBeReal}           % Elevation angle for rotation
+        roll double {mustBeReal}         % Roll angle for rotation
         R = eye(3)                       % Rotation matrix (initialized to identity)
 		obsUVAtru						 % True ovservations in UVA [ u=x/y, v=z/y, alpha = 2*atan(R/norm(pos) ]
 		obsUVAmes						 % Estimate ovservations in UVA [ u=x/y, v=z/y, alpha = 2*atan(R/norm(pos) ]
 		obsTimeSaw                       % Array of time elements
+		mesUncertainty					 % Mesurment Uncertainty of UV
     end
 
     properties (Access = private)
@@ -63,8 +64,8 @@ classdef Camera < handle
         	if size(points, 1) ~= 3
             	points = points';
         	end
-	
-        	translatedPoints = points - obj.bVec;
+	        numPoints = size(points, 2);
+        	translatedPoints = points - repmat(obj.bVec, 1, numPoints);
         	tPoints = obj.R' * translatedPoints;
 		end
 
@@ -106,13 +107,24 @@ classdef Camera < handle
         	tPoints = rotatedPoints + obj.bVec;
     	end
 
+		function obs = obsFun(obj, points, ballRadius)
+			if size(points, 1) ~= 3
+            	points = points';
+			end
+			tPoints = obj.global2local(points);
+			numPoints = size(points, 2);
+        	% Calculate the (u, v) coordinates on the image plane and distance r
+        	obs(1, :) = tPoints(1, :) ./ tPoints(2, :);  % u = x/y
+        	obs(2, :) = tPoints(3, :) ./ tPoints(2, :);  % v = z/y
+			obs(3, :) = 2*atan(ballRadius ./ vecnorm(tPoints));
+		end
+
 		function global2UVA(obj, points, time, ballRadius)
 			if size(points, 1) ~= 3
             	points = points';
 			end
 	        % Apply rotation and translation transformations
-        	numPoints = size(points, 2);
-        	transformedPointsAll = global2local(obj, points);
+        	transformedPointsAll = obj.global2local(points);
 			bools = isInView(obj, transformedPointsAll);
 			transformedPoints = transformedPointsAll(:, bools);
 			filteredTime = time(bools);
@@ -129,12 +141,12 @@ classdef Camera < handle
 		end
 
 		function addCamNoise(obj)
-			stdU = 0.05;
-			stdV = 0.05;
+			stdU = 0.04;
+			stdV = 0.04;
 			stdAlpha = 0.001;
-
-			R = diag([stdU stdV stdAlpha].^2);
-			obj.obsUVAmes = R*randn(size(obj.obsUVAtru)) + obj.obsUVAtru;
+			obj.mesUncertainty = [stdU stdV stdAlpha];
+			Ru = diag(obj.mesUncertainty.^2);
+			obj.obsUVAmes = Ru*randn(size(obj.obsUVAtru)) + obj.obsUVAtru;
 		end
 
         function setUpFrustum(obj)
@@ -187,6 +199,7 @@ classdef Camera < handle
 
 		function drawObs(obj)
 			figure;
+			axis equal
 			hold on
 
 			truObs = obj.obsUVAtru;
@@ -194,10 +207,12 @@ classdef Camera < handle
 			maxU = obj.maxUV(1);
 			maxV = obj.maxUV(2);
 
-			plot(truObs(1, :), truObs(2, :), 'k')
-			plot(mesObs(1, :), mesObs(2, :), 'Color', [0.5 0.5 0.5])
-			plot([-maxU, maxU, maxU, -maxU, -maxU], [maxV, maxV, -maxV, -maxV, maxV], 'k--')
-			
+			plot(truObs(1, :), truObs(2, :), 'k');
+			plot(mesObs(1, :), mesObs(2, :), 'Color', [0.5 0.5 0.5]);
+			plot([-maxU, maxU, maxU, -maxU, -maxU], [maxV, maxV, -maxV, -maxV, maxV], 'k--');
+			crosshairScale = 0.3;
+			plot([0, 0], [-maxV * crosshairScale, maxV * crosshairScale], 'b-');
+			plot([-maxU * crosshairScale, maxU * crosshairScale], [0, 0], 'b-');
 		end
     end
 end
