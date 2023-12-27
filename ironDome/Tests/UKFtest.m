@@ -8,7 +8,7 @@ close all; clear; clc;
 % theta dot
 
 dt = 0.05;
-zMesArr = [0.119 0.113 0.12];
+zMesArr = [0.119 0.113 0.12 0.101 0.099 0.063 0.008 -0.017 -0.037 -0.05];
 numSteps = length(zMesArr) + 1;
 
 kappa = 0;
@@ -68,7 +68,6 @@ for kk=2:numSteps
 	xm1 = xp1;
 	SPm1 = SPprop;
 	Pm1 = Pp1;
-	
 end
 
 

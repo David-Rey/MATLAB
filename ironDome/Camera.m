@@ -16,6 +16,7 @@ classdef Camera < handle
 		obsUVAmes						 % Estimate ovservations in UVA [ u=x/y, v=z/y, alpha = 2*atan(R/norm(pos) ]
 		obsTimeSaw                       % Array of time elements
 		mesUncertainty					 % Mesurment Uncertainty of UV
+		name
     end
 
     properties (Access = private)
@@ -141,9 +142,9 @@ classdef Camera < handle
 		end
 
 		function addCamNoise(obj)
-			stdU = 0.04;
-			stdV = 0.04;
-			stdAlpha = 0.001;
+			stdU = 0.05;
+			stdV = 0.05;
+			stdAlpha = 0.0001;
 			obj.mesUncertainty = [stdU stdV stdAlpha];
 			Ru = diag(obj.mesUncertainty.^2);
 			obj.obsUVAmes = Ru*randn(size(obj.obsUVAtru)) + obj.obsUVAtru;
@@ -198,7 +199,7 @@ classdef Camera < handle
 		end
 
 		function drawObs(obj)
-			figure;
+			
 			axis equal
 			hold on
 
@@ -213,6 +214,7 @@ classdef Camera < handle
 			crosshairScale = 0.3;
 			plot([0, 0], [-maxV * crosshairScale, maxV * crosshairScale], 'b-');
 			plot([-maxU * crosshairScale, maxU * crosshairScale], [0, 0], 'b-');
+			title(obj.name)
 		end
     end
 end

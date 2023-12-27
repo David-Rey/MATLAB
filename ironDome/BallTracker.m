@@ -22,6 +22,7 @@ classdef BallTracker < handle
 				obj.cameras(ii) = Camera([cam.HFOV, cam.VFOV], cam.depth);
 				obj.cameras(ii).setTranslation(cam.pos);
 				obj.cameras(ii).setRotation(cam.az, cam.el, cam.roll);
+				obj.cameras(ii).name = cam.id;
 			end
 		end
 
@@ -58,22 +59,14 @@ classdef BallTracker < handle
 		function runUKF(obj)
 
 			N = 9;  % number of state variables
-			alpha = 0.1;  % spread of sigma points
+			alpha = 0.05;  % spread of sigma points
 			kappa = 0;  % secondary scaling factor
 			beta = 2;  % optimal for gaussian distribution
 
-			%x0 = ones(N, 1);
-			x0 = [5
-				-120
-				0
-				0
-				30.6417777247591
-				25.7115043874616
-				10
-				30
-				100];
-			posP = [1, 1, 1];
-			velP = [50, 50, 50];
+			x0 = [0 -100 0 0 0 0 0 0 0].';
+
+			posP = [100, 100, 100];
+			velP = [100, 100, 100];
 			omgP = [100, 100, 100];
 			P0 = diag([posP, velP, omgP].^2);
 				
@@ -89,7 +82,7 @@ classdef BallTracker < handle
 
 			% For adaptive Q matrix
 			% https://www.mdpi.com/1424-8220/18/3/808
-			Q = diag(repmat(10, 1, N));
+			Q = diag(repmat(0.01, 1, N));
 			chi = chi2inv(.5, N);
 			lambda0 = 0.2;
 
@@ -108,22 +101,24 @@ classdef BallTracker < handle
 			xm1 = SPm1 * wMean.';
 			xRepmat = repmat(xm1, 1, 2*N+1);
 			Pm1 = (SPm1 - xRepmat) * wCov * (SPm1 - xRepmat).' + Q;
+			P = Pm1;
+			x = xm1;
 
 			% Kalman Filter
-			for kk=2:numSteps
+			for kk=1:numSteps-1
 
 				% Update
 				time = obj.trajectory.time(kk);  % current time
 				Rarr = double.empty([0, 1]);  % empty array of uncertainty
-				Zarr = double.empty([0, 1]);  % empty array of measurements
+				Zmes = double.empty([0, 1]);  % empty array of measurements
 				zSpace = double.empty([0, 1]);
 
 				for camNum=1:length(obj.cameras)
 					cam = obj.cameras(camNum);  % cam object
-					[~, timeIndex, iiii] = find(cam.obsTimeSaw == time);  % gets time index of measurement WRONG!!!
+					timeIndex = find(cam.obsTimeSaw == time, 1);  % gets time index of measurement
 					if ~isempty(timeIndex)  % checks if there is a measurement
-						Rarr = [Rarr, cam.mesUncertainty];  % add to uncertainty array
-						Zarr = [Zarr; cam.obsUVAmes(:, timeIndex)];  % 
+						Rarr = [Rarr, cam.mesUncertainty.^2];  % add to uncertainty array
+						Zmes = [Zmes; cam.obsUVAmes(:, timeIndex)];  % 
 						zSpace = [zSpace; cam.obsFun(SPm1(1:3, :), obj.config.GolfBall.radius)];
 					end
 				end
@@ -139,8 +134,8 @@ classdef BallTracker < handle
 				Pz = (zSpace - zBar) * wCov * (zSpace - zBar).' + R;
 				Pxz = (SPm1 - xRepmat) * wCov * (zSpace - zBar).';
 				K = Pxz / Pz;
-
-				x = xm1 + K*(Zarr - zBar);
+				
+				x = xm1 + K*(Zmes - zBar);
 				P = Pm1 - K*Pz*K.';
 
 				% Predict
@@ -159,26 +154,42 @@ classdef BallTracker < handle
 				Pm1 = Pp1;
 
 				% Recording
-				xRec(:, kk-1) = x;
-				PRec(:, :, kk-1) = P;
-				Ptr(kk-1) = trace(P(1:3,1:3));
+				xRec(:, kk) = x;
+				PRec(:, :, kk) = P;
+				Ptr(kk) = trace(P(1:3,1:3));
 			end
 			obj.UKF.xRec = xRec;
 			obj.UKF.PRec = PRec;
 			obj.UKF.Ptr = Ptr;
 		end
-
+				% Adaptive Q
+				%zObs = double.empty([0, 1]);
+				%for camNum=1:length(obj.cameras)
+				%	timeIndex = find(cam.obsTimeSaw == time, 1);  % gets time index of measurement
+				%	cam = obj.cameras(camNum);  % cam object
+				%	if ~isempty(timeIndex)  % checks if there is a measurement
+				%		zObs = [zObs; cam.obsFun(xm1(1:3), obj.config.GolfBall.radius)];
+				%	end
+				%end
+				%mu = Zmes - zObs;
+				%phi = mu.'*inv(Pz + R)*mu;
+				%if (phi > chi)
+				%	lambda = max([lambda0, (phi - 5*chi)/phi]);
+				%	Q = (1-lambda)*Q + lambda*K*mu*mu.'*K.';
+				%	disp(Q)
+				%end
 		function drawResults(obj)
 			org = Orgin(10, [0, 0, 0]);
 			org.lineWidth = 2;
 			pos = obj.trajectory.xTrue(:,1:3);
 			numSteps = pos(:,2);
-	
+			
+			figure('Position', [100 400 600 500]);
 			view([0 0])
 			axis vis3d off equal
 			view([45 45])
 			grid on
-			%rotate3d on
+			rotate3d on
 			hold on
 
 			org.drawOrgin();
@@ -187,6 +198,8 @@ classdef BallTracker < handle
 			end
 			
 			UKFpos = obj.UKF.xRec(1:3, :);
+			UKFvel = obj.UKF.xRec(4:6, :);
+			UKFrad = obj.UKF.xRec(7:9, :);
 
 			plot3(pos(:,1),pos(:,2),pos(:,3), 'k-');
 			plot3(UKFpos(1,:),UKFpos(2,:),UKFpos(3,:), 'r.');
@@ -194,8 +207,40 @@ classdef BallTracker < handle
 			plot3(pos(:,1),pos(:,2), zeros(obj.trajectory.numSteps, 1), 'Color', [0.5 0.5 0.5]);
 			
 			for ii=1:length(obj.cameras)
+				figure('Position', [100 100 400 300]);
 				obj.cameras(ii).drawObs()
 			end
+
+			% UKF plots
+			posError = UKFpos - obj.trajectory.xTrue(2:end, 1:3).';
+			posErrorMag = vecnorm(posError,2,1);
+
+			velError = UKFvel - obj.trajectory.xTrue(2:end, 4:6).';
+			velErrorMag = vecnorm(velError,2,1);
+
+			radError = UKFrad - obj.trajectory.xTrue(2:end, 7:9).';
+			radErrorMag = vecnorm(radError,2,1);
+
+			figure('Position', [1000 100 700 600]);
+			subplot(3,1,1);
+			semilogy(obj.trajectory.time(2:end), posErrorMag)
+			xlabel('time')
+			ylabel('error (m)')
+			grid on
+
+			subplot(3,1,2);
+			semilogy(obj.trajectory.time(2:end), velErrorMag)
+			xlabel('time')
+			ylabel('error (m/s)')
+			grid on
+
+			subplot(3,1,3);
+			semilogy(obj.trajectory.time(2:end), radErrorMag)
+			xlabel('time')
+			ylabel('error (rad/s)')
+			grid on
+
+			%sgtitle('Main Title for All Subplots');
 		end
 
 		function xNew = f(obj, x, dt)
