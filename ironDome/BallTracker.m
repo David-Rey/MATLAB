@@ -63,7 +63,7 @@ classdef BallTracker < handle
 			kappa = 0;  % secondary scaling factor
 			beta = 2;  % optimal for gaussian distribution
 
-			x0 = [0 -100 0 0 0 0 0 0 0].';
+			x0 = [0 -150 0 0 0 0 0 0 0].';
 
 			posP = [100, 100, 100];
 			velP = [100, 100, 100];

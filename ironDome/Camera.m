@@ -142,8 +142,8 @@ classdef Camera < handle
 		end
 
 		function addCamNoise(obj)
-			stdU = 0.05;
-			stdV = 0.05;
+			stdU = 0.03;
+			stdV = 0.03;
 			stdAlpha = 0.0001;
 			obj.mesUncertainty = [stdU stdV stdAlpha];
 			Ru = diag(obj.mesUncertainty.^2);
