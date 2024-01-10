@@ -59,9 +59,11 @@ classdef BallTracker < handle
 		function runUKF(obj)
 
 			N = 9;  % number of state variables
+            numCams = length(obj.cameras);
 			alpha = 0.05;  % spread of sigma points
 			kappa = 0;  % secondary scaling factor
 			beta = 2;  % optimal for gaussian distribution
+            windowSize = 10;
 
 			x0 = [0 -150 0 0 0 0 0 0 0].';
 
@@ -88,6 +90,7 @@ classdef BallTracker < handle
 			xRec = zeros(N, numSteps - 2);
 			PRec = zeros(N, N, numSteps - 2);
 			Ptr = zeros(1, numSteps - 2);
+            SPm1Rec = zeros(numCams, 2*N+1, numSteps - 2);
 
 			% Initialization
 			L = sqrtm((N + lambda) * P0);  % '
@@ -99,17 +102,15 @@ classdef BallTracker < handle
 			xm1 = SPm1 * wMean.';
 			xRepmat = repmat(xm1, 1, 2*N+1);
 			Pm1 = (SPm1 - xRepmat) * wCov * (SPm1 - xRepmat).' + Q;
-			P = Pm1;
-			x = xm1;
 
 			% Kalman Filter
 			for kk=1:numSteps-1
 
 				% Update
 				time = obj.trajectory.time(kk);  % current time
-                Rarr = repmat(10E10, 1, 3*length(obj.cameras));
-                Zmes = repmat([0; 0; 1], length(obj.cameras), 1);
-                zSpace = zeros(3*length(obj.cameras), 2*N + 1);
+                Rarr = repmat(1E5, 1, 3*numCams);
+                Zmes = repmat([0; 0; 1], numCams, 1);
+                zSpace = zeros(3*numCams, 2*N + 1);
 
 				for camNum=1:length(obj.cameras)
 					cam = obj.cameras(camNum);  % cam object
@@ -142,6 +143,18 @@ classdef BallTracker < handle
 				xp1Repmat = repmat(xp1, 1, 2*N+1);
 				Pp1 = (SPp1 - xp1Repmat) * wCov * (SPp1 - xp1Repmat).' + Q;
 
+                % Adaptive Q
+                if kk > windowSize + 1
+                    QML = zeros(N)
+                    for j=kk-windowSize+1: kk
+                        Pj = PRec(:, :, j);
+                        xj = xRec(:, j)
+                        xjm1 = xRec(:, j-1)
+                        SPm1 = SPm1Rec(:, :, j)
+                        Qtemp = Pj + (xj - xjm1)*(xj - xjm1).' 
+                    end
+                end
+
 				% Unit Delay
 				xm1 = xp1;
 				SPm1 = SPp1;
@@ -149,6 +162,7 @@ classdef BallTracker < handle
 
 				% Recording
 				xRec(:, kk) = x;
+                SPm1Rec(:, :, kk) = SPm1;
 				PRec(:, :, kk) = P;
 				Ptr(kk) = trace(P(1:3,1:3));
 			end
@@ -156,22 +170,7 @@ classdef BallTracker < handle
 			obj.UKF.PRec = PRec;
 			obj.UKF.Ptr = Ptr;
 		end
-				% Adaptive Q
-				%zObs = double.empty([0, 1]);
-				%for camNum=1:length(obj.cameras)
-				%	timeIndex = find(cam.obsTimeSaw == time, 1);  % gets time index of measurement
-				%	cam = obj.cameras(camNum);  % cam object
-				%	if ~isempty(timeIndex)  % checks if there is a measurement
-				%		zObs = [zObs; cam.obsFun(xm1(1:3), obj.config.GolfBall.radius)];
-				%	end
-				%end
-				%mu = Zmes - zObs;
-				%phi = mu.'*inv(Pz + R)*mu;
-				%if (phi > chi)
-				%	lambda = max([lambda0, (phi - 5*chi)/phi]);
-				%	Q = (1-lambda)*Q + lambda*K*mu*mu.'*K.';
-				%	disp(Q)
-				%end
+
 		function drawResults(obj)
 			org = Orgin(10, [0, 0, 0]);
 			org.lineWidth = 2;
