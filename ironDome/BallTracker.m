@@ -81,10 +81,8 @@ classdef BallTracker < handle
 			numSteps = length(obj.trajectory.time);
 
 			% For adaptive Q matrix
-			% https://www.mdpi.com/1424-8220/18/3/808
-			Q = diag(repmat(0.01, 1, N));
-			chi = chi2inv(.5, N);
-			lambda0 = 0.2;
+            % https://www.sciencedirect.com/science/article/pii/S1566253520303286
+            Q = diag(repmat(0.01, 1, N));
 
 			% Recording Initialization
 			xRec = zeros(N, numSteps - 2);
@@ -109,25 +107,21 @@ classdef BallTracker < handle
 
 				% Update
 				time = obj.trajectory.time(kk);  % current time
-				Rarr = double.empty([0, 1]);  % empty array of uncertainty
-				Zmes = double.empty([0, 1]);  % empty array of measurements
-				zSpace = double.empty([0, 1]);
+                Rarr = repmat(10E10, 1, 3*length(obj.cameras));
+                Zmes = repmat([0; 0; 1], length(obj.cameras), 1);
+                zSpace = zeros(3*length(obj.cameras), 2*N + 1);
 
 				for camNum=1:length(obj.cameras)
 					cam = obj.cameras(camNum);  % cam object
 					timeIndex = find(cam.obsTimeSaw == time, 1);  % gets time index of measurement
+                    zSpace(3*camNum - 2: 3*camNum, :) = cam.obsFun(SPm1(1:3, :), obj.config.GolfBall.radius);
 					if ~isempty(timeIndex)  % checks if there is a measurement
-						Rarr = [Rarr, cam.mesUncertainty.^2];  % add to uncertainty array
-						Zmes = [Zmes; cam.obsUVAmes(:, timeIndex)];  % 
-						zSpace = [zSpace; cam.obsFun(SPm1(1:3, :), obj.config.GolfBall.radius)];
-					end
+						Rarr(3*camNum-2:3*camNum) = cam.mesUncertainty.^2;
+                        Zmes(3*camNum-2:3*camNum) = cam.obsUVAmes(:, timeIndex);
+                    end
 				end
 
 				R = diag(Rarr);  % convert array to diaginal matrix
-				if isempty(R)
-					disp("no data")
-					continue
-				end
 
 				xRepmat = repmat(xm1, 1, 2*N+1);
 				zBar = zSpace * wMean.';
