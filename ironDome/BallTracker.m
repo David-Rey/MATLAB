@@ -87,10 +87,10 @@ classdef BallTracker < handle
             Q = diag(repmat(0.01, 1, N));
 
 			% Recording Initialization
-			xRec = zeros(N, numSteps - 2);
-			PRec = zeros(N, N, numSteps - 2);
-			Ptr = zeros(1, numSteps - 2);
-            SPm1Rec = zeros(numCams, 2*N+1, numSteps - 2);
+			xRec = zeros(N, numSteps - 1);
+			PRec = zeros(N, N, numSteps - 1);
+			Ptr = zeros(1, numSteps - 1);
+            SPm1Rec = zeros(N, 2*N+1, numSteps - 1);
 
 			% Initialization
 			L = sqrtm((N + lambda) * P0);  % '
@@ -144,15 +144,20 @@ classdef BallTracker < handle
 				Pp1 = (SPp1 - xp1Repmat) * wCov * (SPp1 - xp1Repmat).' + Q;
 
                 % Adaptive Q
-                if kk > windowSize + 1
-                    QML = zeros(N)
-                    for j=kk-windowSize+1: kk
-                        Pj = PRec(:, :, j);
-                        xj = xRec(:, j)
-                        xjm1 = xRec(:, j-1)
-                        SPm1 = SPm1Rec(:, :, j)
-                        Qtemp = Pj + (xj - xjm1)*(xj - xjm1).' 
+                if kk > windowSize + 20
+                    QML = zeros(N);
+                    for j=kk-windowSize+1: kk-1
+                        Pj = diag(diag(PRec(:, :, j)));
+                        xj = xRec(:, j);
+                        xjm1 = xRec(:, j-1);
+                        SPm1 = SPm1Rec(:, :, j);
+                        xj1Repmat = repmat(xjm1, 1, 2*N+1);
+                        Qtemp = Pj + (xj - xjm1) * (xj - xjm1).' - (SPm1 - xj1Repmat) * wCov * (SPm1 - xj1Repmat).';
+                        QML = QML + Qtemp;
                     end
+                    QML = QML / windowSize;
+                    %disp(QML)
+                    %Q = QML;
                 end
 
 				% Unit Delay
