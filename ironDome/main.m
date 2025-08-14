@@ -1,5 +1,6 @@
 close all; clear; clc;
 
+% Inital Condition
 v0 = 40;
 alpha = 50;
 
