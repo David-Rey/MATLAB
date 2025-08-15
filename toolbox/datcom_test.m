@@ -36,8 +36,30 @@ disp('Running DATCOM... (MATLAB will pause)');
 
 %status = system('./datcom.exe < for005.dat');
 %status = system('./datcom.exe');
-status = system('echo for005.dat | ./datcom.exe');
+%status = system('echo for005.dat | ./datcom.exe');
+if ispc
+    % --- Windows ---
+    executable_name = 'datcom.exe';
+    if exist(executable_name, 'file') ~= 2
+        error('"%s" not found in the current directory.', executable_name);
+    end
+    command = sprintf('echo for005.dat | %s', executable_name);
 
+elseif isunix
+    % --- macOS & Linux ---
+    if exist('./datcom', 'file')
+        executable_name = './datcom'; % Standard for Mac/Linux
+    elseif exist('./datcom.exe', 'file')
+        executable_name = './datcom.exe'; % In case it was compiled with .exe
+    else
+        error('No "datcom" or "datcom.exe" executable found in the current directory.');
+    end
+    command = sprintf('echo for005.dat | %s', executable_name);
+
+else
+    error('Unsupported operating system.');
+end
+status = system(command);
 
 
 disp('DATCOM execution finished.');
