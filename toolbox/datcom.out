@@ -1,0 +1,63 @@
+ THIS SOFTWARE AND ANY ACCOMPANYING DOCUMENTATION
+ IS RELEASED "AS IS".  THE U.S. GOVERNMENT MAKES NO
+ WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, CONCERNING
+ THIS SOFTWARE AND ANY ACCOMPANYING DOCUMENTATION,
+ INCLUDING, WITHOUT LIMITATION, ANY WARRANTIES OF
+ MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+ IN NO EVENT WILL THE U.S. GOVERNMENT BE LIABLE FOR ANY
+ DAMAGES, INCLUDING LOST PROFITS, LOST SAVINGS OR OTHER
+ INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE 
+ USE, OR INABILITY TO USE, THIS SOFTWARE OR ANY
+ ACCOMPANYING DOCUMENTATION, EVEN IF INFORMED IN ADVANCE
+ OF THE POSSIBILITY OF SUCH DAMAGES.
+  ****************************************************
+  *    USAF STABILITY AND CONTROL  DIGITAL DATCOM    *
+  *    PROGRAM REV. JAN 96   DIRECT INQUIRIES TO:    *
+  *    WRIGHT LABORATORY  (WL/FIGC)  ATTN: W. BLAKE  *
+  *      WRIGHT PATTERSON AFB, OHIO  45433           *
+  *    PHONE (513) 255-6764,   FAX (513) 258-4054    *
+  ****************************************************
+ Preparing to start the big loop
+ At 1000
+1                         CONERR - INPUT ERROR CHECKING
+0 ERROR CODES - N* DENOTES THE NUMBER OF OCCURENCES OF EACH ERROR
+0 A - UNKNOWN VARIABLE NAME
+0 B - MISSING EQUAL SIGN FOLLOWING VARIABLE NAME
+0 C - NON-ARRAY VARIABLE HAS AN ARRAY ELEMENT DESIGNATION - (N)
+0 D - NON-ARRAY VARIABLE HAS MULTIPLE VALUES ASSIGNED
+0 E - ASSIGNED VALUES EXCEED ARRAY DIMENSION
+0 F - SYNTAX ERROR
+
+0******************************  INPUT DATA CARDS  ******************************
+
+ CASEID MATLAB Test Case                                                         
+ $FLTCON NMACH=1.0, MACH(1)=0.5, NALT=1.0, ALT(1)=10000. $                          ** ILLEGAL CONTROL CARD
+ $FLTCON NALPHA=3, ALSCHD(1)=0.0, 2.0, 4.0 $                                        ** ILLEGAL CONTROL CARD
+ $OPTINS SREF=400.0, CBARR=10.0, BLREF=40.0 $                                       ** ILLEGAL CONTROL CARD
+ $WGPLNF CHRDR=12.0, CHRDTP=8.0, SSPN=20.0, SAVSI=25.0, TYPE=1.0 $                  ** ILLEGAL CONTROL CARD
+ NACA-W-4-0012                                                                   
+ DAMP                                                                            
+ NEXT CASE                                                                       
+1          THE FOLLOWING IS A LIST OF ALL INPUT CARDS FOR THIS CASE.
+0
+ CASEID MATLAB Test Case                                                         
+ $FLTCON NMACH=1.0, MACH(1)=0.5, NALT=1.0, ALT(1)=10000. $                       
+ ERROR IN CARD BELOW
+ $FLTCON NMACH=1.0, MACH(1)=0.5, NALT=1.0, ALT(1)=10000. $                       
+ $FLTCON NALPHA=3, ALSCHD(1)=0.0, 2.0, 4.0 $                                     
+ ERROR IN CARD BELOW
+ $FLTCON NALPHA=3, ALSCHD(1)=0.0, 2.0, 4.0 $                                     
+ $OPTINS SREF=400.0, CBARR=10.0, BLREF=40.0 $                                    
+ ERROR IN CARD BELOW
+ $OPTINS SREF=400.0, CBARR=10.0, BLREF=40.0 $                                    
+ $WGPLNF CHRDR=12.0, CHRDTP=8.0, SSPN=20.0, SAVSI=25.0, TYPE=1.0 $               
+ ERROR IN CARD BELOW
+ $WGPLNF CHRDR=12.0, CHRDTP=8.0, SSPN=20.0, SAVSI=25.0, TYPE=1.0 $               
+ NACA-W-4-0012                                                                   
+ DAMP                                                                            
+ NEXT CASE                                                                       
+ ERROR(S),THIS CASE NOT RUN
+1
+1          THE FOLLOWING IS A LIST OF ALL INPUT CARDS FOR THIS CASE.
+0
+1 END OF JOB.
