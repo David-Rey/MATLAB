@@ -64,13 +64,17 @@ classdef BallTracker < handle
 			kappa = 0;  % secondary scaling factor
 			beta = 2;  % optimal for gaussian distribution
             windowSize = 10;
+            numSteps = length(obj.trajectory.time);
 
-			x0 = [0 -150 0 0 0 0 0 0 0].';
-
+			%x0 = [0 -150 0 0 0 0 0 0 0].';
+            x0 = obj.trajectory.x0;
+            x0(7:9) = [0 0 0].';
 			posP = [100, 100, 100];
 			velP = [100, 100, 100];
 			omgP = [100, 100, 100];
 			P0 = diag([posP, velP, omgP].^2);
+
+            %obj.UKF.P0 = P0;
 				
 			lambda = alpha^2 * (N + kappa) - N;
 			w0Mean = lambda / (N + lambda);  % weight for the first sigma point for mean
@@ -79,8 +83,6 @@ classdef BallTracker < handle
 
 			wCov = diag([w0Cov, repmat(wi, 1, 2*N)]);
 			wMean = [w0Mean, repmat(wi, 1, 2*N)];
-
-			numSteps = length(obj.trajectory.time);
 
 			% For adaptive Q matrix
             % https://www.sciencedirect.com/science/article/pii/S1566253520303286
@@ -222,22 +224,52 @@ classdef BallTracker < handle
 			figure('Position', [1000 100 700 600]);
 			subplot(3,1,1);
 			semilogy(obj.trajectory.time(2:end), posErrorMag)
-			xlabel('time')
-			ylabel('error (m)')
+			xlabel('Time (s)')
+			ylabel('Error (m)')
 			grid on
 
 			subplot(3,1,2);
 			semilogy(obj.trajectory.time(2:end), velErrorMag)
-			xlabel('time')
-			ylabel('error (m/s)')
+			xlabel('Time (s)')
+			ylabel('Error (m/s)')
 			grid on
 
 			subplot(3,1,3);
 			semilogy(obj.trajectory.time(2:end), radErrorMag)
-			xlabel('time')
-			ylabel('error (rad/s)')
+			xlabel('Time (s)')
+			ylabel('Error (rad/s)')
 			grid on
 
+            PRec = obj.UKF.PRec;
+            numSteps = length(obj.trajectory.time(2:end));
+            posTr = zeros(numSteps);
+            VelTr = zeros(numSteps);
+            angTr = zeros(numSteps);
+
+            for ii=1:numSteps
+                posTr(ii) = trace(PRec(1:3, 1:3, ii));
+                VelTr(ii) = trace(PRec(4:6, 4:6, ii));
+                angTr(ii) = trace(PRec(7:9, 7:9, ii));
+            end
+
+            figure('Position', [1000 400 700 600]);
+            subplot(3,1,1);
+			semilogy(obj.trajectory.time(2:end), sqrt(posTr))
+			xlabel('Time (s)')
+			ylabel('Position Uncertainty (m)')
+			grid on
+
+			subplot(3,1,2);
+			semilogy(obj.trajectory.time(2:end), sqrt(VelTr))
+			xlabel('Time (s)')
+			ylabel('Velocity Uncertainty (m/s)')
+			grid on
+
+			subplot(3,1,3);
+			semilogy(obj.trajectory.time(2:end), sqrt(angTr))
+			xlabel('Time (s)')
+			ylabel('Spin Rate Uncertainty (rad/s)')
+			grid on
 			%sgtitle('Main Title for All Subplots');
 		end
 
